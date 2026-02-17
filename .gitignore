@@ -2,3 +2,14 @@
 *.gexf
 *.png
 /__pycache__/
+*.txt
+*.gz
+*.dat
+*.csv
+*.mat
+*.fz
+*.Ink
+preprocdata/aal*
+ESNcpp/eigen-master/*
+DSI/dsi_studio_win/*
+
