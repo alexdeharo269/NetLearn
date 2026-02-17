@@ -52,6 +52,7 @@ class Graph:
         with open(graph_path, "w") as f:
             data = json_graph.node_link_data(self.G, edges="edges", nodes="nodes")
             json.dump(data, f)
+            
 
     def describe_graph(self, min_degree=1, show_centrality=False):
         print(f"\nGraph: {len(self.G.nodes())} nodes, {len(self.G.edges())} edges\n")

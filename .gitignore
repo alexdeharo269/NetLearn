@@ -1,0 +1,4 @@
+*.json
+*.gexf
+*.png
+/__pycache__/
