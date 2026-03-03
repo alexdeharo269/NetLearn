@@ -198,3 +198,47 @@ double CalculateNARMAError(const vector<vector<double>> &X_states, const vector<
         return 1.0;
     return sqrt(mse / var_y); // NRMSE
 }
+
+double CalculateClassificationError(const vector<vector<double>> &final_states, const vector<double> &labels, int res_size, double train_ratio)
+{
+    int num_samples = labels.size();
+    int train_size = num_samples * train_ratio;
+    int test_size = num_samples - train_size;
+
+    Eigen::MatrixXd X_train(train_size, res_size + 1);
+    Eigen::VectorXd Y_train(train_size);
+    Eigen::MatrixXd X_test(test_size, res_size + 1);
+    vector<double> Y_test_vec(test_size);
+
+    for (int i = 0; i < train_size; ++i)
+    {
+        for (int j = 0; j < res_size; ++j)
+            X_train(i, j) = final_states[i][j];
+        X_train(i, res_size) = 1.0;
+        Y_train(i) = labels[i];
+    }
+
+    for (int i = 0; i < test_size; ++i)
+    {
+        int idx = train_size + i;
+        for (int j = 0; j < res_size; ++j)
+            X_test(i, j) = final_states[idx][j];
+        X_test(i, res_size) = 1.0;
+        Y_test_vec[i] = labels[idx];
+    }
+
+    // Train Ridge Classifier
+    Eigen::VectorXd W_out = TrainReadout(X_train, Y_train, 1e-4);
+    Eigen::VectorXd Y_pred = X_test * W_out;
+
+    // Calculate Error
+    int incorrect = 0;
+    for (int i = 0; i < test_size; ++i)
+    {
+        double predicted_class = (Y_pred(i) >= 0) ? 1.0 : -1.0;
+        if (predicted_class != Y_test_vec[i])
+            incorrect++;
+    }
+
+    return (double)incorrect / test_size;
+}

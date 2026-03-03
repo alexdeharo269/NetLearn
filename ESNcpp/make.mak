@@ -4,7 +4,7 @@ INCLUDES = -I eigen-master
 LDFLAGS  = -static -static-libgcc -static-libstdc++
 
 # La clave: Listamos los archivos objeto (.o)
-OBJS =  Multitask.o ESN.o Math.o Utils.o
+OBJS =  Classification.o ESN.o Math.o Utils.o
 TARGET = test.exe
 
 all: $(TARGET)
