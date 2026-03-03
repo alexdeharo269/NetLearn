@@ -1,10 +1,10 @@
 CXX      = g++
-CXXFLAGS = -O3 -std=c++20 -fopenmp -march=native
+CXXFLAGS = -g -O3 -std=c++20 -march=native
 INCLUDES = -I eigen-master
 LDFLAGS  = -static -static-libgcc -static-libstdc++
 
 # La clave: Listamos los archivos objeto (.o)
-OBJS = Res_test.o ESN.o Math.o
+OBJS =  Multitask.o ESN.o Math.o Utils.o
 TARGET = test.exe
 
 all: $(TARGET)
@@ -22,7 +22,9 @@ $(TARGET): $(OBJS)
 run: $(TARGET)
 	./$(TARGET)
 
+
 clean:
 	rm -f *.o $(TARGET)
 
-.PHONY: all run clean
+
+.PHONY: all run clean 

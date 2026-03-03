@@ -1,5 +1,9 @@
 #include "ESN.h"
-#include <format>  
+#include <format>
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 //Declare functions in Math.cpp so that the compiler knows about them, wihtout needing to include that lib.
 double computeSpectralRadius_Internal(const std::vector<std::vector<double>> &matrix);
@@ -11,10 +15,18 @@ void ESN::printSpectralRadius() const
     std::cout << std::format("Spectral Radius: {:.4f}\n", sr);
 }
 
+
 void ESN::rescaleReservoir(double spectral_radius_target)
 {
     double current_sr = computeSpectralRadius_Internal(W);
-    
+
+    // BLINDAJE: Si Eigen falla o la matriz está vacía, evitamos la división por 0 o NaN
+    if (current_sr == 0.0 || std::isnan(current_sr))
+    {
+        std::cout << "CRITICAL ERROR: Radio Espectral es 0 o NaN. Revisa la matriz." << std::endl;
+        return;
+    }
+
     double scale_factor = spectral_radius_target / current_sr;
     for (size_t i = 0; i < W.size(); ++i)
     {

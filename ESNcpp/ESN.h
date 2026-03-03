@@ -27,6 +27,8 @@ struct ESNParams
     double sparsesity;          //proportion of non-zero connections in the reservoir. Useful for first initialization.
     int connectivity_reservoir;  //number of connections per neuron in the reservoir. Useful for first initialization.
     double alpha;                // Leaky rate
+    double tau_vals;              // Time lags for memory capacity. We can use a vector if we want to test different taus.
+    vector<vector<int>> target_nodes={};     // For targeted input: indices of reservoir nodes that receive input.
 };
 
 class ESN
@@ -38,8 +40,7 @@ private:
     vector<vector<double>> W; // Reservoir weights
     vector<double> Wout;      // Output weights
     double alpha;             // Leaking rate. For now not considered in eqs. set to 1
-    vector<double> input;     // Input vector
-    vector<double> state;     // Reservoir state vector
+
     vector<double> output;    // Output vector
 
     inline static mt19937 rng{42}; // Fixed seed for reproducibility
@@ -70,13 +71,27 @@ private:
     {
         int size = params.reservoir_size;
         int input_size = params.input_size;
-        Win.resize(size * input_size, 0.0);
-        uniform_real_distribution<> rununif(-1.0, 1.0);
-
-        for (int i = 0; i < size * input_size; ++i)
+        Win.assign(size * input_size, 0.0);
+        uniform_real_distribution<> rununif(-1.0, 1.0); // For weight values
+        if (params.target_nodes.empty())
         {
-            // Los pesos son independientes del vector 'input'
-            Win[i] = rununif(rng);
+            uniform_real_distribution<> rununif(-1.0, 1.0);
+            for (int i = 0; i < size * input_size; ++i)
+                Win[i] = rununif(rng);
+        }
+        else
+        {
+            for (int k = 0; k < input_size; ++k)
+            {
+                if (k < params.target_nodes.size())
+                {
+                    for (int node : params.target_nodes[k])
+                    {
+                        if (node >= 0 && node < size)
+                            Win[node * input_size + k] = rununif(rng);
+                    }
+                }
+            }
         }
     }
 
@@ -89,6 +104,8 @@ private:
     }
 
 public:
+    vector<double> input; // Input vector
+    vector<double> state; // Reservoir state vector
 
     // Constructor: build the ESN. 
     ESN(ESNParams &params) : params(params)
@@ -105,6 +122,8 @@ public:
         generateReservoir(params);
     }
     void setW(const vector<vector<double>> &new_W){W = new_W;}
+    const vector<vector<double>> &get_W() const { return W; }
+    vector<vector<double>> read_matrix(std::ifstream &infile);
 
     void rescaleReservoir(double spectral_radius_target);
     //printear spectral radius
@@ -112,6 +131,7 @@ public:
 
     double calculateDisparity(const vector<vector<double>> &matrix) const;
     void printDisparity() const;
+    
 
     void EvoluteReservoir();
     
