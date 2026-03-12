@@ -39,7 +39,6 @@ print(summary(model_disp_density))
 # 4. Extract partial residuals via visreg
 v_disp <- visreg(model_disp, "age", plot=FALSE)
 v_disp_den <- visreg(model_disp_density, "age", plot=FALSE)
-v_disp_dev <- visreg(model_disp_dev, "age", plot=FALSE)
 
 F_vis <- visreg(F_model, "age", plot=FALSE)
 M_vis <- visreg(M_model, "age", plot=FALSE)
