@@ -5,7 +5,7 @@ library(R.matlab)
 
 # Rutas
 input_mat_path <- "C:/Users/Ale/Desktop/UB/NetLearn/procdata/density-controlled_organizational_measures_alexa.mat"
-input_path <- "C:/Users/Ale/Desktop/UB/NetLearn/procdata/demographics_with_graph_metrics.csv"
+input_path <- "C:/Users/Ale/Desktop/UB/NetLearn/procdata/demographics_with_graph_metrics_harm.csv"
 
 demo_path <- "C:/Users/Ale/Desktop/UB/NetLearn/preprocdata/demographics_harm.csv"
 
