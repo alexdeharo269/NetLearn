@@ -15,7 +15,11 @@ enum TaskType
     HUB,
     TIMESCALE,
     FAST_PRODUCT,
-    CLASSIFICATION
+    CLASSIFICATION,
+    DELAYED_DISCRIMINATION,
+    HARMONIC_CONVERGENCE,
+    NOISY_MOTIF,
+    TEMPORAL_SMEARING
 };
 
 struct TaskParams
@@ -160,12 +164,12 @@ private:
 
     void generateClassification()
     {
-        num_samples = 400;
+        num_samples = 1000;
         seq_length = 40; // Shortened slightly to prevent total noise-washout
         class_sequences.assign(num_samples, vector<double>(seq_length, 0.0));
         class_labels.assign(num_samples, 0.0);
 
-        uniform_real_distribution<> noise_dist(-1.0, 1.0);    // Heavy noise
+        uniform_real_distribution<> noise_dist(-0.3,0.3);    // Heavy noise
         uniform_real_distribution<> phase_dist(0.0, 6.28318); // Random phase (0 to 2*PI)
 
         for (int i = 0; i < num_samples; i++)
@@ -196,6 +200,147 @@ private:
         }
     }
 
+    void generateDelayedDiscrimination()
+    {
+        num_samples = 1000;
+        seq_length = 50;
+        class_sequences.assign(num_samples, vector<double>(seq_length, 0.0));
+        class_labels.assign(num_samples, 0.0);
+
+        uniform_real_distribution<> noise_dist(-0.2, 0.2);
+
+        for (int i = 0; i < num_samples; i++)
+        {
+            int label = (i % 2 == 0) ? 1 : -1;
+            class_labels[i] = label;
+
+            for (int t = 0; t < seq_length; t++)
+            {
+                double signal = 0.0;
+
+                // Drive the network with distinct frequencies
+                if (t < 30)
+                {
+                    if (label == 1)
+                        signal = sin(0.5 * t);
+                    else
+                        signal = sin(0.2 * t);
+                }
+                // Coasting phase: t >= 30, signal remains 0.0
+
+                class_sequences[i][t] = signal + noise_dist(rng);
+            }
+        }
+    }
+
+    void generateHarmonicConvergence()
+    {
+        num_samples = 1000;
+        seq_length = 25; // 20 steps of signal + 5 steps of silence
+        class_sequences.assign(num_samples, vector<double>(seq_length, 0.0));
+        class_labels.assign(num_samples, 0.0);
+
+        uniform_real_distribution<> noise_dist(-0.1, 0.1);
+
+        for (int i = 0; i < num_samples; i++)
+        {
+            int label = (i % 2 == 0) ? 1 : -1;
+            class_labels[i] = label;
+
+            for (int t = 0; t < seq_length; t++)
+            {
+                double signal = 0.0;
+
+                // Drive the network for 20 steps
+                if (t < 20)
+                {
+                    if (label == 1)
+                        signal = sin(0.4 * t); // Slow wave
+                    else
+                        signal = sin(0.8 * t); // Fast wave
+                }
+                // For t >= 20, the signal is exactly 0.0 (Silence)
+
+                class_sequences[i][t] = signal + noise_dist(rng);
+            }
+        }
+    }
+
+    void generateNoisyMotif()
+    {
+        num_samples = 1000;
+        seq_length = 30;
+        class_sequences.assign(num_samples, vector<double>(seq_length, 0.0));
+        class_labels.assign(num_samples, 0.0);
+
+        // High noise to force the network to use structural modularity for filtering
+        uniform_real_distribution<> noise_dist(-1.0, 1.0);
+
+        for (int i = 0; i < num_samples; i++)
+        {
+            int label = (i % 2 == 0) ? 1 : -1;
+            class_labels[i] = label;
+
+            for (int t = 0; t < seq_length; t++)
+            {
+                double signal = 0.0;
+
+                // Two completely fixed, distinct complex wave motifs
+                if (label == 1)
+                {
+                    signal = sin(0.3 * t) + cos(0.7 * t);
+                }
+                else
+                {
+                    signal = sin(0.5 * t) - cos(0.2 * t);
+                }
+
+                // The connectome must separate the motif from the noise
+                class_sequences[i][t] = signal + noise_dist(rng);
+            }
+        }
+    }
+
+    void generateTemporalSmearing()
+    {
+        num_samples = 1000;
+        seq_length = 30;
+        class_sequences.assign(num_samples, vector<double>(seq_length, 0.0));
+        class_labels.assign(num_samples, 0.0);
+
+        uniform_real_distribution<> noise_dist(-0.5, 0.5);
+
+        for (int i = 0; i < num_samples; i++)
+        {
+            int label = (i % 2 == 0) ? 1 : -1;
+            class_labels[i] = label;
+
+            for (int t = 0; t < seq_length; t++)
+            {
+                double signal = 0.0;
+
+                // Random noise for the first 24 steps to establish a dynamic baseline
+                if (t < 25)
+                {
+                    signal = 0.0;
+                }
+                // The Motif: Testing fast temporal separation vs smearing
+                else if (t == 25)
+                    signal = 1.0;
+                else if (t == 26)
+                    signal = (label == 1) ? -1.0 : 1.0;
+                else if (t == 27)
+                    signal = (label == 1) ? 1.0 : -1.0;
+                else if (t == 28)
+                    signal = -1.0;
+                else if (t == 29)
+                    signal = 0.0; // The crucial anchor to prevent cheating
+
+                class_sequences[i][t] = signal + noise_dist(rng);
+            }
+        }
+    }
+
 public:
     Task(TaskParams &p) : params(p)
     {
@@ -213,6 +358,14 @@ public:
             generateFastProduct();
         else if (params.type == CLASSIFICATION)
             generateClassification();
+        else if (params.type == DELAYED_DISCRIMINATION)
+            generateDelayedDiscrimination();
+        else if (params.type == HARMONIC_CONVERGENCE)
+            generateHarmonicConvergence();
+        else if (params.type == NOISY_MOTIF)
+            generateNoisyMotif();
+        else if (params.type == TEMPORAL_SMEARING)
+            generateTemporalSmearing();
     }
 };
 

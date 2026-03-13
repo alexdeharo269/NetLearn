@@ -1,6 +1,5 @@
 *.json
 *.gexf
-*.png
 /__pycache__/
 *.txt
 *.gz
@@ -12,4 +11,21 @@
 preprocdata/aal*
 ESNcpp/eigen-master/*
 DSI/dsi_studio_win/*
+*.pkl
+*.o
+*.exe
+*.gephi
+*.lnk
+*.log
+*npy
+*.npz
+*.png
+*.pkl
+*.npz
+LICENSE
+README.md
+.venv/*
+
+
+
 

@@ -36,11 +36,11 @@ int main()
 
     TaskParams tp;
     tp.train_ratio = 0.5;
-    tp.type = CLASSIFICATION;
+    tp.type = TEMPORAL_SMEARING;
     Task t_class(tp);
 
-    std::ifstream infile("sample_connectomes_with_age_1000.csv");
-    std::ofstream outfile("Classification_Results_All.txt");
+    std::ifstream infile("sample_connectomes_with_age.csv");
+    std::ofstream outfile("Classification_Results_Temporal_Smearing.txt");
 
     outfile << "Age,Acc_Glob,Acc_Thal,Acc_Sensory\n";
 

@@ -18,6 +18,17 @@ data$atlas <- as.factor(data$atlas)
 model_disp <- gam(Disparity_Y ~ s(age, bs="cr") + sex + dataset + atlas, 
                   data=data, method='REML')
 
+# Check harmonization across datasets
+
+# Fit a model where each dataset gets its own aging curve
+model_check <- gam(Disparity_Y ~ s(age, by=dataset, bs="cr") + sex + dataset + atlas, 
+                   data=data, method='REML')
+
+# Plot all curves together
+plot(model_check, pages=1, shade=TRUE)
+
+
+
 #Robustness check including density as non-linear spline.
 model_disp_density <- gam(Disparity_Y ~ s(age, bs="cr") + sex + dataset + atlas +
                             s(Density, bs="cr", k=5),
