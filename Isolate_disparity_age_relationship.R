@@ -2,7 +2,7 @@ library(mgcv)
 library(visreg)
 
 # 1. Load data containing Disparity_Y (calculated from Variable Density connectomes)
-data <- read.csv("C:/Users/Ale/Desktop/UB/NetLearn/procdata/demographics_with_graph_metrics.csv")
+data <- read.csv("C:/Users/Ale/Desktop/UB/NetLearn/procdata/demographics_filtered_with_graph_metrics.csv")
 
 
 
@@ -15,7 +15,7 @@ data$atlas <- as.factor(data$atlas)
 
 
 # 3. Fit GAM
-model_disp <- gam(Disparity_Y ~ s(age, bs="cr") + sex + dataset + atlas, 
+model_disp <- gam(Disparity_Y ~ s(age, bs="cr") + sex + dataset, 
                   data=data, method='REML')
 
 # Check harmonization across datasets
@@ -30,7 +30,7 @@ plot(model_check, pages=1, shade=TRUE)
 
 
 #Robustness check including density as non-linear spline.
-model_disp_density <- gam(Disparity_Y ~ s(age, bs="cr") + sex + dataset + atlas +
+model_disp_density <- gam(Disparity_Y ~ s(age, bs="cr") + sex + dataset +
                             s(Density, bs="cr", k=5),
                           data=data, method='REML')
 
@@ -38,8 +38,8 @@ F_data <- subset(data, sex == 1)
 M_data <- subset(data, sex == 0)
 
 # 2. Fit separate models
-F_model <- gam(Disparity_Y ~ s(age, bs="cr") + dataset + atlas, data=F_data, method='REML')
-M_model <- gam(Disparity_Y ~ s(age, bs="cr") + dataset + atlas, data=M_data, method='REML')
+F_model <- gam(Disparity_Y ~ s(age, bs="cr") + dataset, data=F_data, method='REML')
+M_model <- gam(Disparity_Y ~ s(age, bs="cr") + dataset, data=M_data, method='REML')
 
 
 # Print summary to check significance
