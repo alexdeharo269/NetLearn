@@ -71,7 +71,7 @@ def calculate_graph_metrics(connectomes_cd, connectomes_vd):
     strengths_cd = np.mean(np.sum(connectomes_cd, axis=2) - np.diagonal(connectomes_cd, axis1=1, axis2=2), axis=1)
     
     #Calculate density by comparing to a fully connected graph of 90 nodes (without self-loops)
-    density = np.array([np.sum(connectomes_cd[i] > 0) / (90 * 89) for i in range(n_subj)])
+    density = np.array([np.sum(connectomes_vd[i] > 0) / (90 * 89) for i in range(n_subj)])
     
     return pd.DataFrame({
         'Strength': strengths, 
@@ -187,33 +187,6 @@ def load_alexa_graph_metrics(demo, mat_data):
     
     return global_data
 
-def get_nodal_disparity_and_strength(connectomes, roi_prefix="R"):
-    """
-    Calcula la disparidad nodal (Y) y la fuerza nodal (S) para cada región de cada sujeto.
-    Retorna: DataFrame (N_sujetos x N_regiones)
-    """
-    n_subj, n_rois, _ = connectomes.shape
-    nodal_disparities = np.zeros((n_subj, n_rois))
-    nodal_strengths = np.zeros((n_subj, n_rois))
-
-    for i in range(n_subj):
-        adj = connectomes[i].copy()
-        np.fill_diagonal(adj, 0)
-        strength = adj.sum(axis=1)
-        valid = strength > 0
-        
-        if np.any(valid):
-            # Fórmula vectorizada: Y_i = sum((w_ij / s_i)^2)
-            nodal_Y = np.sum((adj / strength[:, None])**2, axis=1, where=valid[:, None])
-            nodal_disparities[i, :] = nodal_Y
-            nodal_strengths[i, :] = strength
-        else:
-            nodal_disparities[i, :] = np.nan
-            
-    roi_names = [f"R{i+1}" for i in range(n_rois)]
-    df_disparities = pd.DataFrame(nodal_disparities, columns=roi_names)
-    df_strengths = pd.DataFrame(nodal_strengths, columns=roi_names)
-    return df_disparities, df_strengths
 
 def run_roi_correlations(df, roi_list, target_col='age', collapse_means=True):
     """
