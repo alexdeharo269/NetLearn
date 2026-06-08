@@ -29,6 +29,9 @@ struct ESNParams
     double alpha;                // Leaky rate
     double tau_vals;              // Time lags for memory capacity. We can use a vector if we want to test different taus.
     vector<vector<int>> target_nodes={};     // For targeted input: indices of reservoir nodes that receive input.
+    unsigned seed = 42;          // Per-instance RNG seed. CHANGED: makes Win generation reproducible *and*
+                                 // thread-safe so many ESNs can be built inside an OpenMP region (one seed
+                                 // per subject / Win-replicate) without racing on a shared static RNG.
 };
 
 class ESN
@@ -43,7 +46,12 @@ private:
 
     vector<double> output;    // Output vector
 
-    inline static mt19937 rng{42}; // Fixed seed for reproducibility
+    // CHANGED: was `inline static mt19937 rng{42};` (shared across all ESNs). A shared static RNG cannot
+    // be used when constructing ESNs concurrently — threads would race and reproducibility would break.
+    // It is now a per-instance member seeded from params.seed in the constructor. Because we always call
+    // setW(connectome) after construction, the reservoir W drawn here is overwritten; only the random
+    // input projection Win actually depends on this RNG, and it is now deterministic per (subject, replicate).
+    mt19937 rng;
 
     
 
@@ -108,7 +116,7 @@ public:
     vector<double> state; // Reservoir state vector
 
     // Constructor: build the ESN. 
-    ESN(ESNParams &params) : params(params)
+    ESN(ESNParams &params) : params(params), rng(params.seed)
     {
         
         Win.resize(params.reservoir_size * params.input_size, 0.0);
