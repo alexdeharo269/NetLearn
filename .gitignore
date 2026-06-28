@@ -1,3 +1,7 @@
+borradorv2
+supplementary
+*.pdf
+*zip
 *.json
 *.gexf
 /__pycache__/
@@ -25,6 +29,20 @@ DSI/dsi_studio_win/*
 LICENSE
 README.md
 .venv/*
+*.py
+*.txt
+*.csv
+*.png
+*.pdf
+resuts/*
+agecorrelations/*
+conn2res/*
+ESN_Gephi/*
+graphs/*
+plots/*
+DSI/*
+recoveryfigs/*
+ESNcpp/eigen-master/*
 
 
 
