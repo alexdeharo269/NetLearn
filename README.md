@@ -69,18 +69,9 @@ the full reservoir experiments.
 - A C++ compiler with Eigen and OpenMP (for the ESN engine; the notebook
   autodetects the toolchain, with manual overrides documented inline)
 
-## Reproducing the results
-
-1. Place `data_with_metrics.pkl` under `procdata/`.
-2. Open `TFM_closing_figures.ipynb` and run top to bottom. Heavy steps are
-   cached under `procdata/`; set the `FORCE_RECOMPUTE` / `FORCE_RECOMPILE`
-   switches in the parameters cell to rerun from scratch.
 
 ## Citation
 
 If you use this code, please cite the manuscript and the original data source
 (Mousley et al.).
 
-## License
-
-<!-- Add a license, e.g. MIT, before making the repo public. -->
