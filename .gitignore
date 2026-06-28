@@ -43,6 +43,7 @@ plots/*
 DSI/*
 recoveryfigs/*
 ESNcpp/eigen-master/*
+*.R
 
 
 
