@@ -77,37 +77,39 @@ double PearsonCorrelation(const vector<double> &y_true, const vector<double> &y_
 
     return numerator / denominator;
 }
-double CalculateMemoryCapacity(const vector<vector<double>> &X_states, const vector<double> &predictions, int tau_vals, int size_input, double train_ratio)
+// CHANGED SIGNATURE + BEHAVIOUR.
+//  * `ridge`   : ridge (Tikhonov) regularisation strength — now passed in (was hard-coded 1e-4) so the
+//                notebook controls it from a single place.
+//  * `squared` : if true (DEFAULT) accumulate r^2 per delay → Jaeger/Damicelli memory capacity MC = Σ_τ r²(τ).
+//                if false, accumulate |r| → the Σ|r| variant (Suárez-style) used only for the r-vs-r² check.
+//  * `washout` : length of the initial transient discarded (was hard-coded 100).
+// Per the project convention the PRIMARY metric is MC = Σ_τ r²(τ) (Damicelli), so squared defaults to true.
+double CalculateMemoryCapacity(const vector<vector<double>> &X_states, const vector<double> &predictions,
+                               int tau_vals, int size_input, double train_ratio,
+                               double ridge = 1e-4, bool squared = true, int washout = 100)
 {
-    int washout = 100; // 1. Descartar transitorio inicial
-    int train_size = (size_input * train_ratio) - washout;
-    int test_size = size_input - (size_input * train_ratio);
-    int res_size = X_states[0].size();
+    int train_size = (int)(size_input * train_ratio) - washout;
+    int test_size  = size_input - (int)(size_input * train_ratio);
+    int res_size   = X_states[0].size();
 
-    // 2. Añadir +1 para la columna de BIAS
+    // +1 column for the constant BIAS node
     Eigen::MatrixXd X_train(train_size, res_size + 1);
     Eigen::MatrixXd X_test(test_size, res_size + 1);
 
-    // Rellenar X_train con Washout y Bias
     for (int i = 0; i < train_size; ++i)
     {
         for (int j = 0; j < res_size; ++j)
-        {
             X_train(i, j) = X_states[washout + i][j];
-        }
-        X_train(i, res_size) = 1.0; // Nodo de Bias constante
+        X_train(i, res_size) = 1.0; // bias
     }
 
     int train_offset = washout + train_size;
 
-    // Rellenar X_test con Bias
     for (int i = 0; i < test_size; ++i)
     {
         for (int j = 0; j < res_size; ++j)
-        {
             X_test(i, j) = X_states[train_offset + i][j];
-        }
-        X_test(i, res_size) = 1.0; // Nodo de Bias constante
+        X_test(i, res_size) = 1.0; // bias
     }
 
     double memory_capacity = 0.0;
@@ -118,28 +120,19 @@ double CalculateMemoryCapacity(const vector<vector<double>> &X_states, const vec
         vector<double> Y_test_vec(test_size);
 
         for (int t = 0; t < train_size; ++t)
-        {
             Y_train(t) = predictions[tau_idx * size_input + washout + t];
-        }
         for (int t = 0; t < test_size; ++t)
-        {
             Y_test_vec[t] = predictions[tau_idx * size_input + train_offset + t];
-        }
 
-        Eigen::VectorXd W_out = TrainReadout(X_train, Y_train, 1e-4);
+        Eigen::VectorXd W_out = TrainReadout(X_train, Y_train, ridge);
         Eigen::VectorXd Y_pred_eigen = X_test * W_out;
 
         vector<double> Y_pred_vec(test_size);
         for (int t = 0; t < test_size; ++t)
-        {
             Y_pred_vec[t] = Y_pred_eigen(t);
-        }
 
         double rho = PearsonCorrelation(Y_test_vec, Y_pred_vec);
-        //cout<<format("Tau {}: Memory Capacity = {:.4f}\n", tau_idx + 1, rho * rho) << endl;
-
-        // 3. Forzar flotante absoluto para que no capee a 0
-        memory_capacity += std::abs(rho);
+        memory_capacity += squared ? (rho * rho) : std::abs(rho); // r²  (primary)  |  |r| (check only)
     }
 
     return memory_capacity;

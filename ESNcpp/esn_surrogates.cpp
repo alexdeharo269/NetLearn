@@ -40,10 +40,11 @@ int main(int argc, char** argv) {
         std::mt19937 rng(p.seed + 1000u * (unsigned)ids[i]);
         for (int rep = 0; rep < n_real; ++rep) {
             // Real: re-seed per realization so Real and nulls see the same input draw stream.
-            buf[i].push_back({ids[i], rep, "Real",        mc_total(mats[i],                 p, rng)});
+            buf[i].push_back({ids[i], rep, "Real",        mc_total(mats[i],                       p, rng)});
             buf[i].push_back({ids[i], rep, "BrokenStick", mc_total(null_brokenstick(mats[i], rng), p, rng)});
-            buf[i].push_back({ids[i], rep, "Uniform",     mc_total(null_uniform(mats[i]),         p, rng)});
-            buf[i].push_back({ids[i], rep, "Reshuffle",   mc_total(null_reshuffle(mats[i], rng),  p, rng)});
+            buf[i].push_back({ids[i], rep, "Uniform",     mc_total(null_uniform(mats[i]),          p, rng)});
+            buf[i].push_back({ids[i], rep, "Reshuffle",   mc_total(null_reshuffle(mats[i], rng),   p, rng)});
+            buf[i].push_back({ids[i], rep, "SignFlip",    mc_total(null_signflip(mats[i], rng),    p, rng)});
         }
         #pragma omp critical
         std::cerr << "  subject " << (i + 1) << "/" << S << "\r";

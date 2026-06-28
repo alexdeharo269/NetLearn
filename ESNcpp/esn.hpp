@@ -209,12 +209,21 @@ inline double mc_total(const MatrixXd& W, const ESNParams& p, std::mt19937& rng)
 //  These are the three MC null models of the manuscript.
 // ----------------------------------------------------------------------------
 inline MatrixXd null_uniform(const MatrixXd& W) {
-    MatrixXd M = MatrixXd::Zero(W.rows(), W.cols());
-    for (int i = 0; i < W.rows(); ++i) {
-        double s = 0; int k = 0;
-        for (int j = 0; j < W.cols(); ++j) if (W(i, j) > 0) { s += W(i, j); ++k; }
-        if (k > 0) for (int j = 0; j < W.cols(); ++j) if (W(i, j) > 0) M(i, j) = s / k;
+    const int n = W.rows();
+    VectorXd mean = VectorXd::Zero(n);              // s_i / k_i por nodo
+    for (int i = 0; i < n; ++i) {
+        double s = 0.0; int k = 0;
+        for (int j = 0; j < n; ++j)
+            if (W(i, j) > 0) { s += W(i, j); ++k; }
+        if (k > 0) mean(i) = s / k;
     }
+    MatrixXd M = MatrixXd::Zero(n, n);
+    for (int i = 0; i < n; ++i)
+        for (int j = i + 1; j < n; ++j)
+            if (W(i, j) > 0) {
+                const double v = 0.5 * (mean(i) + mean(j));
+                M(i, j) = v; M(j, i) = v;            // simétrico
+            }
     return M;
 }
 inline MatrixXd null_reshuffle(const MatrixXd& W, std::mt19937& rng) {
@@ -228,6 +237,21 @@ inline MatrixXd null_reshuffle(const MatrixXd& W, std::mt19937& rng) {
     return M;
 }
 
+
+// SF  sign-flip : negate the weights of a random half of the (symmetric) edges.
+//     Leaves every |w_ij| — and hence the order-2 term (W^2)_ii = sum_j w_ij^2 —
+//     exactly unchanged, while randomising the sign of each closed triangle
+//     (W^3)_ii = sum_{j,h} w_ij w_jh w_hi. It therefore perturbs the order-3
+//     (weighted-clustering) structure in isolation. Symmetric (i,j)/(j,i) pairs
+//     flip together so W stays symmetric and e^W stays SPD.
+inline MatrixXd null_signflip(const MatrixXd& W, std::mt19937& rng) {
+    MatrixXd M = W;
+    std::bernoulli_distribution flip(0.5);
+    for (int i = 0; i < W.rows(); ++i)
+        for (int j = i + 1; j < W.cols(); ++j)
+            if (W(i, j) != 0.0 && flip(rng)) { M(i, j) = -M(i, j); M(j, i) = -M(j, i); }
+    return M;
+}
 
 inline MatrixXd null_brokenstick(const MatrixXd& W, std::mt19937& rng) {
     MatrixXd M = MatrixXd::Zero(W.rows(), W.cols());
