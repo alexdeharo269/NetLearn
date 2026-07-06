@@ -1,0 +1,11 @@
+scipy 
+pandas
+numpy 
+matplotlib
+pymatreader
+seaborn 
+nilearn
+pypickle
+statsmodels
+pathlib
+umap-learn
