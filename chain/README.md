@@ -1,9 +1,9 @@
 # Analytical chain: disparity → subgraph centrality → Gramian → memory capacity
 
 Code for the analytical link between local weight disparity and reservoir memory,
-evaluated on the **base model only** (the real, symmetric connectomes). The weight
-surrogates are directed or sign-changed, so the walk expansion does not apply to them;
-they stay as empirical tests in the manuscript.
+evaluated on the real, symmetric connectomes. The weight surrogates of `esn_surrogates`
+are symmetric too (see `ESNcpp/esn.hpp`), so the same expansion holds for them; the
+sign-flip null has negative weights and is the exception.
 
 | step | relation | what the pipeline measures |
 |---|---|---|
@@ -76,9 +76,22 @@ Outputs in `chain/results/` (ignored by git):
 * `log_state` (default `0`): when `1`, `esn_mc` adds an `r2_mean` column with the mean
   squared reservoir state ⟨r_i(t)²⟩ after the washout (the linearity diagnostic).
 
-The comments on the surrogates were also corrected: H0 is the symmetric endpoint mean,
-Reshuffle and Broken Stick are directed, and the rescaling to ρ changes the
-sign-flipped matrix's order-2 term.
+**Symmetric surrogates.** Reshuffle and Broken Stick used to be built row by row, which
+made them directed. In the linear regime asymmetry alone raises MC (the real weights made
+asymmetric gain ≈ +3 MC at input scale 1e-5, +0.5 at 1), so both are now symmetric, on the
+real edge set:
+
+* Reshuffle: the real weights are permuted over the undirected edges, then pairs of edges
+  swap weights (simulated annealing) until every node is back to its own strength sᵢ and
+  Σⱼwᵢⱼ², i.e. its own Yᵢ (median residuals 0.1 % and 0.3 %). Same per-node weight
+  distribution, random fibre → weight assignment.
+* Broken Stick: iid Exp(1) weights (the broken-stick law once normalised), scaled
+  symmetrically to the real strengths, then swapped so each node's Yᵢ matches the
+  broken-stick mean 2/(kᵢ+1). Strengths exact; ⟨kY/(2k/(k+1))⟩ ≈ 1.05 (real ≈ 1.5).
+
+On the 100-subject subset, median ΔMC (null − real), input scale 1e-5 [and 1]: Uniform
+−1.85 [−0.69], Broken Stick −0.83 [−0.47], Reshuffle +0.07 [+0.06, n.s.], Sign Flip +0.01
+[+0.18]. The rescaling to ρ changes the sign-flipped matrix's order-2 term.
 
 **Input scale and ridge.** Every program (`esn_mc`, `esn_surrogates`, `esn_bio`, `esn_ipc`,
 `esn_trace`) reads `input_scale`, and multiplies `ridge` by `input_scale²`. In the linear

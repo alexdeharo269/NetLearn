@@ -214,13 +214,19 @@ inline double mc_total(const MatrixXd& W, const ESNParams& p, std::mt19937& rng,
 }
 
 // ----------------------------------------------------------------------------
-//  Node-level weight surrogates (all keep the binary topology and degrees)
-//    H0  uniform     : w_ij = (s_i/k_i + s_j/k_j)/2   symmetric; flattens heterogeneity
-//    H1  reshuffle   : permute each row's weights among its edges   -> DIRECTED
-//    BS  broken-stick: split each row's strength by uniform spacings -> DIRECTED
+//  Node-level weight surrogates. All keep the binary topology, the degrees and the
+//  symmetry of the (undirected) dMRI connectome, so (W^2)_ii = s_i^2 Y_i holds for every
+//  null and the walk expansion applies to them as to the real network.
+//    H0  uniform     : w_ij = (s_i/k_i + s_j/k_j)/2       flattens heterogeneity
+//    H1  reshuffle   : the real edge weights, reassigned to other edges so that each
+//                      node keeps s_i and sum_j w_ij^2 (hence Y_i): same per-node weight
+//                      distribution, random fibre -> weight assignment
+//    BS  broken-stick: keeps s_i; each node gets the disparity of a random partition
+//                      of its strength, E[Y_i] = 2/(k_i+1)
+//    SF  sign-flip   : see null_signflip
 //  mc_curve() rescales every matrix to spectral radius rho, surrogates included.
-//  For directed surrogates (W^2)_ii = sum_j w_ij w_ji, not s_i^2 Y_i, so the walk
-//  expansion of the manuscript applies to the real (symmetric) network only.
+//  Directed nulls are avoided on purpose: asymmetry alone gives complex eigenvalues,
+//  which raise linear-regime MC by itself (same weights made asymmetric: +3 MC).
 // ----------------------------------------------------------------------------
 inline MatrixXd null_uniform(const MatrixXd& W) {
     const int n = W.rows();
@@ -240,17 +246,89 @@ inline MatrixXd null_uniform(const MatrixXd& W) {
             }
     return M;
 }
-inline MatrixXd null_reshuffle(const MatrixXd& W, std::mt19937& rng) {
-    MatrixXd M = MatrixXd::Zero(W.rows(), W.cols());
-    for (int i = 0; i < W.rows(); ++i) {
-        std::vector<int> idx; std::vector<double> wv;
-        for (int j = 0; j < W.cols(); ++j) if (W(i, j) > 0) { idx.push_back(j); wv.push_back(W(i, j)); }
-        std::shuffle(wv.begin(), wv.end(), rng);
-        for (size_t a = 0; a < idx.size(); ++a) M(i, idx[a]) = wv[a];
-    }
+struct UndirectedEdges { std::vector<int> a, b; std::vector<double> w; };
+
+inline UndirectedEdges undirected_edges(const MatrixXd& W) {
+    UndirectedEdges E;
+    for (int i = 0; i < W.rows(); ++i)
+        for (int j = i + 1; j < W.cols(); ++j)
+            if (W(i, j) > 0) { E.a.push_back(i); E.b.push_back(j); E.w.push_back(W(i, j)); }
+    return E;
+}
+
+inline MatrixXd from_edges(const UndirectedEdges& E, int n) {
+    MatrixXd M = MatrixXd::Zero(n, n);
+    for (size_t e = 0; e < E.w.size(); ++e) { M(E.a[e], E.b[e]) = E.w[e]; M(E.b[e], E.a[e]) = E.w[e]; }
     return M;
 }
 
+// Simulated annealing over swaps of two edges' weights (the edge set and the weight
+// multiset never change). Drives every node's strength s_i and sum of squared weights
+// q_i towards the targets st, qt; cost = sum_i (s_i/st_i - 1)^2 + (q_i/qt_i - 1)^2.
+inline void anneal_weight_swaps(UndirectedEdges& E, int n, const VectorXd& st, const VectorXd& qt,
+                                std::mt19937& rng, long sweeps = 10000, double T0 = 0.01) {
+    const int m = (int)E.w.size();
+    if (m < 2) return;
+    VectorXd s = VectorXd::Zero(n), q = VectorXd::Zero(n);
+    for (int e = 0; e < m; ++e) {
+        const double w = E.w[e];
+        s(E.a[e]) += w; s(E.b[e]) += w; q(E.a[e]) += w * w; q(E.b[e]) += w * w;
+    }
+    auto cost = [&](int i, double si, double qi) {
+        if (st(i) <= 0) return 0.0;
+        const double x = si / st(i) - 1, y = qi / qt(i) - 1;
+        return x * x + y * y;
+    };
+    double C = 0;
+    for (int i = 0; i < n; ++i) C += cost(i, s(i), q(i));
+    std::uniform_int_distribution<int> pick(0, m - 1);
+    std::uniform_real_distribution<double> U(0.0, 1.0);
+    const long steps = sweeps * (long)m;
+    const double cool = std::pow(1e-8, 1.0 / steps);
+    double T = T0 * C / n;
+    for (long t = 0; t < steps; ++t, T *= cool) {
+        const int e = pick(rng), f = pick(rng);
+        const double we = E.w[e], wf = E.w[f];
+        if (e == f || we == wf) continue;
+        const int nd[4] = {E.a[e], E.b[e], E.a[f], E.b[f]};
+        const double ds[4] = {wf - we, wf - we, we - wf, we - wf};
+        const double dq[4] = {wf * wf - we * we, wf * wf - we * we, we * we - wf * wf, we * we - wf * wf};
+        double dC = 0; bool merged[4] = {false, false, false, false};
+        for (int k = 0; k < 4; ++k) {                 // edges e and f may share an endpoint
+            if (merged[k]) continue;
+            double DS = ds[k], DQ = dq[k];
+            for (int l = k + 1; l < 4; ++l) if (nd[l] == nd[k]) { DS += ds[l]; DQ += dq[l]; merged[l] = true; }
+            dC += cost(nd[k], s(nd[k]) + DS, q(nd[k]) + DQ) - cost(nd[k], s(nd[k]), q(nd[k]));
+        }
+        if (dC <= 0 || U(rng) < std::exp(-dC / T)) {
+            for (int k = 0; k < 4; ++k) { s(nd[k]) += ds[k]; q(nd[k]) += dq[k]; }
+            E.w[e] = wf; E.w[f] = we; C += dC;
+        }
+    }
+}
+
+// Symmetric scaling M_ij -> a_i a_j M_ij so that every row sums to s0_i.
+inline MatrixXd scale_to_strengths(const MatrixXd& M, const VectorXd& s0) {
+    VectorXd a = VectorXd::Ones(M.rows());
+    for (int it = 0; it < 5000; ++it) {
+        const VectorXd r = M * a; double err = 0;
+        for (int i = 0; i < M.rows(); ++i) if (s0(i) > 0) {
+            err = std::max(err, std::abs(a(i) * r(i) / s0(i) - 1));
+            a(i) = std::sqrt(a(i) * s0(i) / r(i));
+        }
+        if (err < 1e-10) break;
+    }
+    return a.asDiagonal() * M * a.asDiagonal();
+}
+
+// H1: permute the real weights over the undirected edges, then anneal swaps back to each
+// node's own s_i and sum_j w_ij^2. Typical residuals: 0.1% in s_i, 0.3% in Y_i (median).
+inline MatrixXd null_reshuffle(const MatrixXd& W, std::mt19937& rng) {
+    UndirectedEdges E = undirected_edges(W);
+    std::shuffle(E.w.begin(), E.w.end(), rng);
+    anneal_weight_swaps(E, W.rows(), W.rowwise().sum(), W.array().square().rowwise().sum(), rng);
+    return from_edges(E, W.rows());
+}
 
 // SF  sign-flip : negate the weights of a random half of the (symmetric) edges.
 //     Leaves every |w_ij| — and hence the raw order-2 term (W^2)_ii = sum_j w_ij^2 —
@@ -267,19 +345,24 @@ inline MatrixXd null_signflip(const MatrixXd& W, std::mt19937& rng) {
     return M;
 }
 
+// BS: iid Exp(1) weight per undirected edge (normalised iid exponentials are the
+// broken-stick / uniform-spacing law), scaled symmetrically to the real strengths, then
+// weight swaps so each node's Y_i matches the broken-stick mean 2/(k_i+1), and rescaled
+// to the exact strengths. Result: s_i exact, <k Y / (2k/(k+1))> ~ 1.05 (real ~ 1.6).
 inline MatrixXd null_brokenstick(const MatrixXd& W, std::mt19937& rng) {
-    MatrixXd M = MatrixXd::Zero(W.rows(), W.cols());
-    std::uniform_real_distribution<double> U(0.0, 1.0);
-    for (int i = 0; i < W.rows(); ++i) {
-        std::vector<int> idx; double s = 0;
-        for (int j = 0; j < W.cols(); ++j) if (W(i, j) > 0) { idx.push_back(j); s += W(i, j); }
-        int k = (int)idx.size(); if (k == 0) continue;
-        std::vector<double> cut; cut.push_back(0.0); cut.push_back(1.0);
-        for (int c = 0; c < k - 1; ++c) cut.push_back(U(rng));
-        std::sort(cut.begin(), cut.end());
-        for (int a = 0; a < k; ++a) M(i, idx[a]) = s * (cut[a + 1] - cut[a]);
+    const int n = W.rows();
+    UndirectedEdges E = undirected_edges(W);
+    std::exponential_distribution<double> X(1.0);
+    for (auto& w : E.w) w = X(rng);
+    const VectorXd s0 = W.rowwise().sum();
+    UndirectedEdges F = undirected_edges(scale_to_strengths(from_edges(E, n), s0));
+    VectorXd qt(n);
+    for (int i = 0; i < n; ++i) {
+        const int k = (int)(W.row(i).array() > 0).count();
+        qt(i) = k > 0 ? s0(i) * s0(i) * 2.0 / (k + 1) : 0.0;
     }
-    return M;
+    anneal_weight_swaps(F, n, s0, qt, rng);
+    return scale_to_strengths(from_edges(F, n), s0);
 }
 
 // ----------------------------------------------------------------------------
