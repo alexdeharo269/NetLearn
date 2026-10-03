@@ -77,7 +77,7 @@ configs and the connectome CSVs (`cpp/data/`) automatically.
 | program | what it computes | output |
 |---|---|---|
 | `esn_mc`         | memory capacity for every subject (the workhorse) | `subject_id, MC_Glob` |
-| `esn_surrogates` | MC of the real net vs three weight nulls (uniform / reshuffle / broken-stick) over realizations | tidy `subject_id, realization, model, MC` |
+| `esn_surrogates` | MC of the real net vs four symmetric weight nulls (uniform / broken-stick / reshuffle / sign-flip) over realizations | tidy `subject_id, realization, model, MC` |
 | `esn_bio`        | MC with global vs thalamic input vs a random-input-pair null | `subject_id, MC, MC_Bio, MC_BioNull` |
 | `esn_ipc`        | information-processing capacity by Legendre order (P1, P2, P1·P1) | `subject_id, Lin, Quad, Cross11` |
 | `esn_trace`      | one subject: input, reservoir states, readout, and the MC(τ) curve | `trace_*.csv` |

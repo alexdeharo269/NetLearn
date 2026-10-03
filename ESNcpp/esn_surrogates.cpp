@@ -1,4 +1,4 @@
-// esn_surrogates — MC of the real network vs three weight null models, over
+// esn_surrogates — MC of the real network vs four symmetric weight nulls, over
 // several realizations, on a small subject subset. Produces tidy long-format
 // output for mean+std boxplots. Goal: show the real/null MC gap is ~constant.
 #include "esn.hpp"
