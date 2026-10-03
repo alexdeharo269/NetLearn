@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
     p.tau_max     = cfg.geti("tau", 20);
     p.seed        = (unsigned)cfg.geti("seed", 42);
     p.input_scale = cfg.getd("input_scale", 1.0);    // 1.0 = original unscaled U(-1,1) Win
+    p.ridge      *= p.input_scale * p.input_scale;   // states scale with the input: keep ridge relative
     const bool log_state = cfg.getb("log_state", false);  // adds an r2_mean column
 
     std::string in_csv  = cfg.gets("in_csv",  "data/connectomes.csv");

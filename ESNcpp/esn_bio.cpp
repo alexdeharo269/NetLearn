@@ -16,6 +16,9 @@ int main(int argc, char** argv) {
     base.rho=cfg.getd("spectral_radius",0.99); base.ridge=cfg.getd("ridge",1e-4);
     base.train_ratio=cfg.getd("train_ratio",0.7); base.tau_max=cfg.geti("tau",20);
     base.seed=(unsigned)cfg.geti("seed",42);
+    base.input_scale = cfg.getd("input_scale", 1.0);      // multiplies Win
+    base.ridge *= base.input_scale * base.input_scale;           // states scale with the input: keep ridge relative
+
 
     std::vector<int> thal = cfg.getints("thal_nodes");   // e.g. 76,77
     if (thal.empty()) thal = {76, 77};
