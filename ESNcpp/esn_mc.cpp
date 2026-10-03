@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
     p.input_scale = cfg.getd("input_scale", 1.0);    // 1.0 = original unscaled U(-1,1) Win
     p.ridge      *= p.input_scale * p.input_scale;   // states scale with the input: keep ridge relative
     const bool log_state = cfg.getb("log_state", false);  // adds an r2_mean column
+    const bool log_theory = cfg.getb("log_theory", false); // adds MC_lin (linear theory, same Win)
 
     std::string in_csv  = cfg.gets("in_csv",  "data/connectomes.csv");
     std::string out_csv = cfg.gets("out_csv", "mc_results.csv");
@@ -40,13 +41,13 @@ int main(int argc, char** argv) {
               << " tau=" << p.tau_max << " win_reps=" << p.n_win
               << " input_scale=" << p.input_scale << "\n";
 
-    std::vector<double> mc(S, 0.0), r2(S, 0.0);
+    std::vector<double> mc(S, 0.0), r2(S, 0.0), lin(S, 0.0);
     auto t0 = std::chrono::steady_clock::now();
     long done = 0;
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < S; ++i) {
         std::mt19937 rng(p.seed + 1000u * (unsigned)ids[i]);
-        mc[i] = mc_total(mats[i], p, rng, log_state ? &r2[i] : nullptr);
+        mc[i] = mc_total(mats[i], p, rng, log_state ? &r2[i] : nullptr, log_theory ? &lin[i] : nullptr);
         #pragma omp atomic
         ++done;
         if (done % 200 == 0) {
@@ -59,10 +60,11 @@ int main(int argc, char** argv) {
               << std::chrono::duration_cast<std::chrono::seconds>(t1 - t0).count() << "s\n";
 
     std::ofstream out(out_csv);
-    out << "subject_id,MC_Glob" << (log_state ? ",r2_mean" : "") << "\n";
+    out << "subject_id,MC_Glob" << (log_state ? ",r2_mean" : "") << (log_theory ? ",MC_lin" : "") << "\n";
     for (int i = 0; i < S; ++i) {
         out << ids[i] << "," << mc[i];
         if (log_state) out << "," << r2[i];
+        if (log_theory) out << "," << lin[i];
         out << "\n";
     }
     std::cerr << "wrote " << out_csv << "\n";

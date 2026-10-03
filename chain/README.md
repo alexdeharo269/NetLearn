@@ -1,16 +1,17 @@
-# Analytical chain: disparity → subgraph centrality → Gramian → memory capacity
+# Analytical chain: disparity → subgraph centrality → Gramian → spectrum → memory capacity
 
 Code for the analytical link between local weight disparity and reservoir memory,
-evaluated on the real, symmetric connectomes. The weight surrogates of `esn_surrogates`
-are symmetric too (see `ESNcpp/esn.hpp`), so the same expansion holds for them; the
-sign-flip null has negative weights and is the exception.
+on the real, symmetric connectomes and on symmetric weight surrogates (`ESNcpp/esn.hpp`).
+The sign-flip null has negative weights; the asymmetric control is directed on purpose.
 
 | step | relation | what the pipeline measures |
 |---|---|---|
 | 1 | disparity → $C_{ii}$ | $(\tilde W^2)_{ii}=\tilde s_i^2Y_i$; R² of $C_{ii}\approx 1+\tfrac12\tilde s_i^2Y_i$; identity $\sum_i\tilde s_i^2Y_i=\sum_k\lambda_k^2$ |
 | 2 | $C_{ii}$ ↔ Gramian | node-level correlation of $C_{ii}$ with $(G_I)_{ii}=[(I-\tilde W^2)^{-1}]_{ii}$ |
-| 3 | structure → MC | subject-level correlation of MC with $\langle\tilde s^2Y\rangle=\sum_k\lambda_k^2/N$, $\sum_k\lambda_k^2(1-\lambda_k^{2\tau})$, $\langle C_{ii}\rangle$, $\langle\lvert\lambda\rvert\rangle$, … |
-| 4 | linear → tanh | MC at the manuscript input scale (1) and near-linear (0.1); mean squared state $\langle r^2\rangle$ |
+| 3 | linear theory ↔ ESN | closed-form MC of the linear reservoir (same $W_{in}$, same ridge per sample, no simulation) against the simulated tanh ESN, per input scale |
+| 4 | structure → MC | MC against $\langle\tilde s^2Y\rangle=\sum_k\lambda_k^2/N$, $\langle\lvert\lambda\rvert\rangle$ (Aceituno et al.), $\sum\lambda^3/N$, $\sum\lambda^4/N$, $\langle C_{ii}\rangle$, $C_w$, …; R² increments over $\sum\lambda^2$ |
+| regime | development vs aging | r with MC of shape ($R=Y/Y_{null}$), scale ($\langle\tilde s^2\rangle$), $\langle\tilde s^2Y\rangle$, $C_w$; age ≤ 32 vs > 32 |
+| nulls | surrogates | ΔMC vs real, Wilcoxon; $\sum\lambda^2/N$ and linear theory per surrogate; the real weights made asymmetric as a control |
 
 ## 1 · Getting the data here (run on your machine)
 
@@ -43,38 +44,50 @@ attached to the cloud session.
 ```bash
 pip install numpy scipy pandas matplotlib
 sudo apt install libeigen3-dev        # or: brew install eigen  (Eigen 3.4)
-python chain/chain_analysis.py --data ../NetLearn-data             # full sample, scales 1 and 0.1
+python chain/chain_analysis.py --data ../NetLearn-data             # full sample, scales 1 and 1e-5
 python chain/chain_analysis.py --synthetic 80 --out chain/results_synthetic   # pipeline test, no data
 ```
 
-Options: `--scales 1 1e-5`, `--subset 500`, `--threads 8`, `--skip-esn` (reuse
-`<out>/work/mc_scale*.csv`), `--data path/to/data_with_metrics.pkl` (reads the pickle directly).
+Options: `--scales 1 1e-5`, `--subset 500`, `--threads 8`, `--surr-real 5`, `--surr-n 100`,
+`--skip-surrogates`, `--skip-esn` (reuse `<out>/work/*.csv`), `--data path/to/data_with_metrics.pkl`
+(reads the pickle directly). On a Mac the compiler needs OpenMP: `CXX=g++-14 python chain/...`
+(Homebrew GCC) or the conda clang you use for `make`.
 
-The ESN runs call `ESNcpp/esn_mc` (built automatically) with the manuscript
-hyper-parameters, i.e. `RES` + `MAIN` of `ESNcpp/TFM_closing_figures.ipynb`:
-ρ = 0.99, ridge = 1e-6, train 0.7, washout 1000, 10 000 steps, τ_max = 20, one
-input projection per subject, seed 42. At input scale 1 the MC is the manuscript MC;
-if `<data>/cache/mc_main.*` exists, the summary reports the reproduction check.
-A full run (~4 000 subjects, two scales) takes a few minutes on 4 cores.
+The ESN runs call `ESNcpp/esn_mc` and `ESNcpp/esn_surrogates` (built automatically) with the
+manuscript hyper-parameters, `RES` + `MAIN` / `SURR` of `ESNcpp/TFM_closing_figures.ipynb`:
+ρ = 0.99, ridge = 1e-6 (× input_scale²), train 0.7, washout 1000, 10 000 steps, τ_max = 20, one
+input projection per subject, seed 42; surrogates: 5 realizations on the notebook's 100-subject
+subset (read from `<data>/cache/mc_surrogates.*`; a random subset otherwise). At input scale 1
+the MC is the manuscript MC (reproduction check in the summary). A full run takes ~10 min on 4 cores.
 
 Outputs in `chain/results/` (ignored by git):
 
 | file | content |
 |---|---|
-| `chain_summary.md` / `.json` | all numbers of the chain (steps 1–4, lifespan check, reproduction check) |
-| `chain_subject.csv` | one row per connectome: structural chain quantities, MC and ⟨r²⟩ per scale, metadata |
+| `chain_summary.md` / `.json` | every number of the chain: steps 1–4, R² increments, regime, surrogates, manuscript (directed) nulls from the cache, lifespan, reproduction |
+| `chain_subject.csv` | one row per connectome: structural quantities, MC, ⟨r²⟩ and MC_lin per scale, metadata |
+| `chain_surrogates_scale*.csv` | surrogate runs: subject, realization, model, MC, Σλ²/N, MC_lin |
 | `chain_nodes_sample.csv` | node-level values for 150 random subjects (panels a–b) |
-| `fig_chain.png` / `.pdf` | (a) step 1, (b) step 2, (c) structure → MC, (d) MC across input scales, (e) lifespan |
+| `fig_chain.png` / `.pdf` | (a) step 1, (b) step 2, (c) theory vs simulation, (d) Σλ²/N → MC, (e) surrogates on the real-network line, (f) regime |
 
 ## 3 · Changes to the C++ engine (backward compatible)
 
-`ESNcpp/esn.hpp` and `ESNcpp/esn_mc.cpp` gained two optional config keys:
+Optional config keys (all off by default, so default outputs are unchanged):
 
 * `input_scale` (default `1.0`) multiplies every entry of `W_in ~ U(-1,1)`. The random
   stream does not depend on it, and at `1.0` the output is bit-for-bit identical to the
   previous binary (checked).
-* `log_state` (default `0`): when `1`, `esn_mc` adds an `r2_mean` column with the mean
-  squared reservoir state ⟨r_i(t)²⟩ after the washout (the linearity diagnostic).
+* `log_state` (`esn_mc`): adds `r2_mean`, the mean squared reservoir state ⟨r_i(t)²⟩ after the
+  washout (the linearity diagnostic).
+* `log_theory` (`esn_mc`, `esn_surrogates`): adds `MC_lin`, the memory capacity of the linear
+  reservoir x(t) = W̃x(t−1) + W_in u(t) with the same W_in, read out by population ridge
+  regression with the simulation's penalty per training sample (ridge / n_train):
+  m(τ) = (gᵀMg)² / (σ²gᵀMCMg), g = σ²W̃^τW_in, M = (C + ridge/n_train·I)⁻¹, σ² = 1/3, with the
+  state covariance C from the doubling algorithm (`mc_linear_theory` in `esn.hpp`).
+  `esn_surrogates` also adds `m2` = Tr W̃²/N = Σλ²/N.
+* `asym_control` (`esn_surrogates`): adds `RealAsym`, the real weights made asymmetric (each
+  undirected edge keeps its weight one way and takes a random other edge's weight the other
+  way). It has its own random stream, so the other models' rows do not change.
 
 **Symmetric surrogates.** Reshuffle and Broken Stick used to be built row by row, which
 made them directed. In the linear regime asymmetry alone raises MC (the real weights made
