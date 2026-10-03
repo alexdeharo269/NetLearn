@@ -331,7 +331,8 @@ def summarize(df, scales, pooled, cache_check, surr, cache):
                step2_median_subject_pearson=float(df["r_C_GI"].median()),
                step2_median_subject_spearman=float(df["rho_C_GI"].median()))
     preds = [p for p in PREDICTORS if p in df]
-    sets = [["m2"], ["m2", "m3"], ["m2", "m3", "m4"], ["abs_lam_mean"], ["Cii_mean"], [shape_col(df)]]
+    df = df.assign(log_m2=np.log(df["m2"]))
+    sets = [["m2"], ["log_m2"], ["m2", "m3"], ["m2", "m3", "m4"], ["abs_lam_mean"], ["Cii_mean"], [shape_col(df)]]
     if "C_w" in df: sets += [["m2", "C_w"], [shape_col(df), "C_w"]]
     for sc in scales:
         mc, r2, lin = f"MC_s{sc:g}", f"r2_s{sc:g}", f"MClin_s{sc:g}"
@@ -447,6 +448,7 @@ MODEL_COL = {"Real": INK, "Uniform": AQUA, "BrokenStick": RED, "Reshuffle": BLUE
 MODEL_LAB = {"Real": "Real", "Uniform": "Uniform", "BrokenStick": "Broken Stick", "Reshuffle": "Reshuffle",
              "SignFlip": "Sign Flip", "RealAsym": "Real, asymmetric"}
 REGIME_COL = {"development": ORANGE, "aging": VIOLET}       # as in the manuscript figure
+LABEL_OFFSET = {"Real": (-7, 6, "right"), "Reshuffle": (7, -11, "left"), "SignFlip": (7, 5, "left")}
 
 
 def make_figure(df, nodes, scales, surr, path_stem):
@@ -499,8 +501,9 @@ def make_figure(df, nodes, scales, surr, path_stem):
             g = sm[sm["model"] == m]
             a.scatter(g["m2"], g["MC"], s=9, color=MODEL_COL[m], alpha=0.35, lw=0, zorder=3)
             a.scatter(g["m2"].mean(), g["MC"].mean(), s=60, color=MODEL_COL[m], edgecolor="white", lw=1.5, zorder=4)
-            a.annotate(MODEL_LAB[m], (g["m2"].mean(), g["MC"].mean()), xytext=(6, -3), textcoords="offset points",
-                       fontsize=7, color=INK, zorder=5)
+            dx, dy, ha = LABEL_OFFSET.get(m, (7, -3, "left"))
+            a.annotate(MODEL_LAB[m], (g["m2"].mean(), g["MC"].mean()), xytext=(dx, dy), textcoords="offset points",
+                       fontsize=7, color=INK, ha=ha, zorder=5)
     a.set(xlabel=r"$\sum_k\lambda_k^2/N$", ylabel=f"MC (input scale {lin_sc:g})",
           title="(e) Surrogates on the real-network line")
 
