@@ -47,7 +47,7 @@ python chain/chain_analysis.py --data ../NetLearn-data             # full sample
 python chain/chain_analysis.py --synthetic 80 --out chain/results_synthetic   # pipeline test, no data
 ```
 
-Options: `--scales 1 0.1 0.01`, `--subset 500`, `--threads 8`, `--skip-esn` (reuse
+Options: `--scales 1 1e-5`, `--subset 500`, `--threads 8`, `--skip-esn` (reuse
 `<out>/work/mc_scale*.csv`), `--data path/to/data_with_metrics.pkl` (reads the pickle directly).
 
 The ESN runs call `ESNcpp/esn_mc` (built automatically) with the manuscript
@@ -79,3 +79,10 @@ Outputs in `chain/results/` (ignored by git):
 The comments on the surrogates were also corrected: H0 is the symmetric endpoint mean,
 Reshuffle and Broken Stick are directed, and the rescaling to ρ changes the
 sign-flipped matrix's order-2 term.
+
+**Input scale and ridge.** Every program (`esn_mc`, `esn_surrogates`, `esn_bio`, `esn_ipc`,
+`esn_trace`) reads `input_scale`, and multiplies `ridge` by `input_scale²`. In the linear
+regime the states scale with the input, so this keeps the regularisation relative; at
+`input_scale=1` nothing changes. In the notebook set `INPUT_SCALE` (§0, cell 2) and run with
+`FORCE_RECOMPUTE = True` (cached `procdata/*.pkl` hold the old scale-1 results). Note that at
+1e-5 the IPC quadratic/cross capacities vanish (the reservoir is linear).

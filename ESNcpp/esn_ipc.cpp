@@ -16,6 +16,9 @@ int main(int argc, char** argv) {
     p.rho=cfg.getd("spectral_radius",0.99); p.ridge=cfg.getd("ridge",1e-4);
     p.train_ratio=cfg.getd("train_ratio",0.7); p.tau_max=cfg.geti("tau",20);
     p.seed=(unsigned)cfg.geti("seed",42);
+    p.input_scale = cfg.getd("input_scale", 1.0);      // multiplies Win
+    p.ridge *= p.input_scale * p.input_scale;           // states scale with the input: keep ridge relative
+
     int  ipc_tau  = cfg.geti("ipc_tau", 6);
     bool do_cross = cfg.getb("ipc_cross", false);
 
