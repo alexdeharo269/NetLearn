@@ -100,6 +100,7 @@ struct ESNParams {
     double train_ratio = 0.7;
     int    tau_max     = 20;
     unsigned seed      = 42;
+    double input_scale = 1.0;     // multiplies every Win entry; 1.0 = original U(-1,1) input
     std::vector<int> input_nodes; // empty => global input to all nodes
 };
 
@@ -141,23 +142,32 @@ inline double r2_ridge(const MatrixXd& Ztr, const VectorXd& ytr,
 }
 
 // Build a random input projection Win (global, or restricted to input_nodes).
+// Entries are input_scale * U(-1,1); the RNG stream does not depend on input_scale.
 inline VectorXd make_Win(const ESNParams& p, std::mt19937& rng) {
     std::uniform_real_distribution<double> U(-1.0, 1.0);
     VectorXd Win = VectorXd::Zero(p.N);
-    if (p.input_nodes.empty()) for (int i = 0; i < p.N; ++i) Win(i) = U(rng);
-    else for (int n : p.input_nodes) if (n >= 0 && n < p.N) Win(n) = U(rng);
+    if (p.input_nodes.empty()) for (int i = 0; i < p.N; ++i) Win(i) = p.input_scale * U(rng);
+    else for (int n : p.input_nodes) if (n >= 0 && n < p.N) Win(n) = p.input_scale * U(rng);
     return Win;
 }
 
 // Per-delay memory capacity curve r^2(tau), tau=1..tau_max, averaged over n_win.
-inline VectorXd mc_curve(const MatrixXd& W, const ESNParams& p, std::mt19937& rng) {
+// If state_r2 is given, it receives the mean squared reservoir state <r_i(t)^2>
+// over post-washout steps and nodes (averaged over n_win): the linearity diagnostic.
+inline VectorXd mc_curve(const MatrixXd& W, const ESNParams& p, std::mt19937& rng,
+                         double* state_r2 = nullptr) {
     MatrixXd Wn = rescale_spectral(W, p.rho);
     VectorXd acc = VectorXd::Zero(p.tau_max);
+    double r2_acc = 0.0;
     std::uniform_real_distribution<double> U(-1.0, 1.0);
     for (int rep = 0; rep < p.n_win; ++rep) {
         VectorXd u(p.steps); for (int t = 0; t < p.steps; ++t) u(t) = U(rng);
         VectorXd Win = make_Win(p, rng);
         MatrixXd X = run_states(Wn, Win, u);
+        if (state_r2) {
+            const int nrow = p.steps - p.washout;
+            if (nrow > 0) r2_acc += X.bottomRows(nrow).squaredNorm() / (double(nrow) * p.N);
+        }
 
         if (p.washout >= p.tau_max) {
             // fast path: design matrix identical for all tau -> factor Z^T Z once.
@@ -194,19 +204,23 @@ inline VectorXd mc_curve(const MatrixXd& W, const ESNParams& p, std::mt19937& rn
             }
         }
     }
+    if (state_r2) *state_r2 = r2_acc / std::max(1, p.n_win);
     return acc / std::max(1, p.n_win);
 }
 
-inline double mc_total(const MatrixXd& W, const ESNParams& p, std::mt19937& rng) {
-    return mc_curve(W, p, rng).sum();
+inline double mc_total(const MatrixXd& W, const ESNParams& p, std::mt19937& rng,
+                       double* state_r2 = nullptr) {
+    return mc_curve(W, p, rng, state_r2).sum();
 }
 
 // ----------------------------------------------------------------------------
-//  Node-level weight surrogates (directed, per-row; preserve strength & degree)
-//    H0  uniform     : w_ij = s_i / k_i           (removes weight heterogeneity)
-//    H1  reshuffle   : permute a node's edge weights among its edges
-//    BS  broken-stick: disparity null — strength split by uniform spacings
-//  These are the three MC null models of the manuscript.
+//  Node-level weight surrogates (all keep the binary topology and degrees)
+//    H0  uniform     : w_ij = (s_i/k_i + s_j/k_j)/2   symmetric; flattens heterogeneity
+//    H1  reshuffle   : permute each row's weights among its edges   -> DIRECTED
+//    BS  broken-stick: split each row's strength by uniform spacings -> DIRECTED
+//  mc_curve() rescales every matrix to spectral radius rho, surrogates included.
+//  For directed surrogates (W^2)_ii = sum_j w_ij w_ji, not s_i^2 Y_i, so the walk
+//  expansion of the manuscript applies to the real (symmetric) network only.
 // ----------------------------------------------------------------------------
 inline MatrixXd null_uniform(const MatrixXd& W) {
     const int n = W.rows();
@@ -239,11 +253,11 @@ inline MatrixXd null_reshuffle(const MatrixXd& W, std::mt19937& rng) {
 
 
 // SF  sign-flip : negate the weights of a random half of the (symmetric) edges.
-//     Leaves every |w_ij| — and hence the order-2 term (W^2)_ii = sum_j w_ij^2 —
-//     exactly unchanged, while randomising the sign of each closed triangle
-//     (W^3)_ii = sum_{j,h} w_ij w_jh w_hi. It therefore perturbs the order-3
-//     (weighted-clustering) structure in isolation. Symmetric (i,j)/(j,i) pairs
-//     flip together so W stays symmetric and e^W stays SPD.
+//     Leaves every |w_ij| — and hence the raw order-2 term (W^2)_ii = sum_j w_ij^2 —
+//     unchanged, while randomising the sign of each closed triangle
+//     (W^3)_ii = sum_{j,h} w_ij w_jh w_hi. Symmetric (i,j)/(j,i) pairs flip together
+//     so W stays symmetric. NB: rho(S∘W) <= rho(W), so the rescaling to rho done in
+//     mc_curve() multiplies the order-2 term by (rho(W)/rho(S∘W))^2 >= 1.
 inline MatrixXd null_signflip(const MatrixXd& W, std::mt19937& rng) {
     MatrixXd M = W;
     std::bernoulli_distribution flip(0.5);
