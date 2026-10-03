@@ -48,3 +48,15 @@ ESNcpp/eigen-master/*
 
 
 
+
+# --- analytical chain: code is tracked; results, work files and binaries stay local ---
+!chain/
+!chain/*.py
+!chain/README.md
+chain/results*/
+chain/__pycache__/
+ESNcpp/esn_mc
+ESNcpp/esn_surrogates
+ESNcpp/esn_bio
+ESNcpp/esn_ipc
+ESNcpp/esn_trace

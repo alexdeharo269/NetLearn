@@ -22,6 +22,8 @@ int main(int argc, char** argv) {
     p.train_ratio = cfg.getd("train_ratio", 0.7);
     p.tau_max     = cfg.geti("tau", 20);
     p.seed        = (unsigned)cfg.geti("seed", 42);
+    p.input_scale = cfg.getd("input_scale", 1.0);    // 1.0 = original unscaled U(-1,1) Win
+    const bool log_state = cfg.getb("log_state", false);  // adds an r2_mean column
 
     std::string in_csv  = cfg.gets("in_csv",  "data/connectomes.csv");
     std::string out_csv = cfg.gets("out_csv", "mc_results.csv");
@@ -34,15 +36,16 @@ int main(int argc, char** argv) {
     read_connectomes(in_csv, p.N, ids, mats);
     const int S = (int)mats.size();
     std::cerr << "esn_mc: " << S << " subjects | N=" << p.N << " steps=" << p.steps
-              << " tau=" << p.tau_max << " win_reps=" << p.n_win << "\n";
+              << " tau=" << p.tau_max << " win_reps=" << p.n_win
+              << " input_scale=" << p.input_scale << "\n";
 
-    std::vector<double> mc(S, 0.0);
+    std::vector<double> mc(S, 0.0), r2(S, 0.0);
     auto t0 = std::chrono::steady_clock::now();
     long done = 0;
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < S; ++i) {
         std::mt19937 rng(p.seed + 1000u * (unsigned)ids[i]);
-        mc[i] = mc_total(mats[i], p, rng);
+        mc[i] = mc_total(mats[i], p, rng, log_state ? &r2[i] : nullptr);
         #pragma omp atomic
         ++done;
         if (done % 200 == 0) {
@@ -55,8 +58,12 @@ int main(int argc, char** argv) {
               << std::chrono::duration_cast<std::chrono::seconds>(t1 - t0).count() << "s\n";
 
     std::ofstream out(out_csv);
-    out << "subject_id,MC_Glob\n";
-    for (int i = 0; i < S; ++i) out << ids[i] << "," << mc[i] << "\n";
+    out << "subject_id,MC_Glob" << (log_state ? ",r2_mean" : "") << "\n";
+    for (int i = 0; i < S; ++i) {
+        out << ids[i] << "," << mc[i];
+        if (log_state) out << "," << r2[i];
+        out << "\n";
+    }
     std::cerr << "wrote " << out_csv << "\n";
     return 0;
 }
