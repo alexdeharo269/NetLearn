@@ -21,6 +21,11 @@ int main(int argc, char** argv) {
     p.ridge *= p.input_scale * p.input_scale;           // states scale with the input: keep ridge relative
 
     int n_real = cfg.geti("n_real", 10);
+    // log_theory: add m2 = Tr(Wn^2)/N = sum_k lambda_k^2 / N and MC_lin (linear theory, same Win)
+    // asym_control: add "RealAsym", the real weights made asymmetric. It has its own random
+    //               stream, so the rows of the other models do not change.
+    const bool log_theory = cfg.getb("log_theory", false);
+    const bool asym_control = cfg.getb("asym_control", false);
 
     std::string in_csv  = cfg.gets("in_csv",  "data/connectomes_sub.csv");
     std::string out_csv = cfg.gets("out_csv", "surrogate_results.csv");
@@ -35,19 +40,27 @@ int main(int argc, char** argv) {
     std::cerr << "esn_surrogates: " << S << " subjects x " << n_real << " realizations\n";
 
     // one result row per (subject, realization, model)
-    struct Row { int sid, rep; const char* model; double mc; };
+    struct Row { int sid, rep; const char* model; double mc, m2, lin; };
     std::vector<std::vector<Row>> buf(S);
 
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < S; ++i) {
         std::mt19937 rng(p.seed + 1000u * (unsigned)ids[i]);
+        std::mt19937 rng_ctrl(p.seed + 1000u * (unsigned)ids[i] + 7u);
+        auto run = [&](int rep, const char* name, const MatrixXd& M, std::mt19937& g) {
+            double lin = 0.0, m2 = 0.0;
+            const double mc = mc_total(M, p, g, nullptr, log_theory ? &lin : nullptr);
+            if (log_theory) { const MatrixXd Wn = rescale_spectral(M, p.rho); m2 = (Wn * Wn).trace() / p.N; }
+            buf[i].push_back({ids[i], rep, name, mc, m2, lin});
+        };
         for (int rep = 0; rep < n_real; ++rep) {
             // Real: re-seed per realization so Real and nulls see the same input draw stream.
-            buf[i].push_back({ids[i], rep, "Real",        mc_total(mats[i],                       p, rng)});
-            buf[i].push_back({ids[i], rep, "BrokenStick", mc_total(null_brokenstick(mats[i], rng), p, rng)});
-            buf[i].push_back({ids[i], rep, "Uniform",     mc_total(null_uniform(mats[i]),          p, rng)});
-            buf[i].push_back({ids[i], rep, "Reshuffle",   mc_total(null_reshuffle(mats[i], rng),   p, rng)});
-            buf[i].push_back({ids[i], rep, "SignFlip",    mc_total(null_signflip(mats[i], rng),    p, rng)});
+            run(rep, "Real",        mats[i],                       rng);
+            run(rep, "BrokenStick", null_brokenstick(mats[i], rng), rng);
+            run(rep, "Uniform",     null_uniform(mats[i]),          rng);
+            run(rep, "Reshuffle",   null_reshuffle(mats[i], rng),   rng);
+            run(rep, "SignFlip",    null_signflip(mats[i], rng),    rng);
+            if (asym_control) run(rep, "RealAsym", asymmetric_control(mats[i], rng_ctrl), rng_ctrl);
         }
         #pragma omp critical
         std::cerr << "  subject " << (i + 1) << "/" << S << "\r";
@@ -55,9 +68,12 @@ int main(int argc, char** argv) {
     std::cerr << "\n";
 
     std::ofstream out(out_csv);
-    out << "subject_id,realization,model,MC\n";
-    for (auto& rows : buf) for (auto& r : rows)
-        out << r.sid << "," << r.rep << "," << r.model << "," << r.mc << "\n";
+    out << "subject_id,realization,model,MC" << (log_theory ? ",m2,MC_lin" : "") << "\n";
+    for (auto& rows : buf) for (auto& r : rows) {
+        out << r.sid << "," << r.rep << "," << r.model << "," << r.mc;
+        if (log_theory) out << "," << r.m2 << "," << r.lin;
+        out << "\n";
+    }
     std::cerr << "wrote " << out_csv << "\n";
     return 0;
 }

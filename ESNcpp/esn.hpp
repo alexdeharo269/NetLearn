@@ -151,18 +151,46 @@ inline VectorXd make_Win(const ESNParams& p, std::mt19937& rng) {
     return Win;
 }
 
+// Memory capacity of the LINEAR reservoir x(t) = Wn x(t-1) + Win u(t), u iid with
+// variance 1/3 (U(-1,1)), read out by population ridge regression with the same penalty
+// per training sample as mc_curve (eta = ridge / n_train). With C = Cov x and
+// g_tau = Cov(x(t), u(t-tau)) = (1/3) Wn^tau Win, the readout (C + eta I)^-1 g_tau gives
+//   m(tau) = (g' M g)^2 / ((1/3) g' M C M g),   M = (C + eta I)^-1.
+// No simulation: it is the tanh ESN's MC in the limit of small input.
+inline double mc_linear_theory(const MatrixXd& Wn, const VectorXd& Win, const ESNParams& p) {
+    const double s2u = 1.0 / 3.0;
+    const int n = p.steps - p.washout;
+    const int ntr = std::min(std::max((int)std::lround(p.train_ratio * n), 10), n - 10);
+    // C = s2u * sum_j Wn^j Win Win' Wn'^j  by doubling: C <- C + A C A', A <- A^2
+    MatrixXd C = s2u * Win * Win.transpose(), A = Wn;
+    for (int k = 0; k < 16; ++k) { C += A * C * A.transpose(); A = A * A; }   // 2^16 terms
+    const int N = (int)Wn.rows();
+    Eigen::LDLT<MatrixXd> M(C + (p.ridge / ntr) * MatrixXd::Identity(N, N));
+    double mc = 0.0;
+    VectorXd g = s2u * Win;
+    for (int tau = 1; tau <= p.tau_max; ++tau) {
+        g = Wn * g;
+        const VectorXd Mg = M.solve(g);
+        const double num = g.dot(Mg), den = s2u * Mg.dot(C * Mg);
+        if (den > 0) mc += num * num / den;
+    }
+    return mc;
+}
+
 // Per-delay memory capacity curve r^2(tau), tau=1..tau_max, averaged over n_win.
 // If state_r2 is given, it receives the mean squared reservoir state <r_i(t)^2>
 // over post-washout steps and nodes (averaged over n_win): the linearity diagnostic.
+// If mc_lin is given, it receives mc_linear_theory() for the same Win (averaged over n_win).
 inline VectorXd mc_curve(const MatrixXd& W, const ESNParams& p, std::mt19937& rng,
-                         double* state_r2 = nullptr) {
+                         double* state_r2 = nullptr, double* mc_lin = nullptr) {
     MatrixXd Wn = rescale_spectral(W, p.rho);
     VectorXd acc = VectorXd::Zero(p.tau_max);
-    double r2_acc = 0.0;
+    double r2_acc = 0.0, lin_acc = 0.0;
     std::uniform_real_distribution<double> U(-1.0, 1.0);
     for (int rep = 0; rep < p.n_win; ++rep) {
         VectorXd u(p.steps); for (int t = 0; t < p.steps; ++t) u(t) = U(rng);
         VectorXd Win = make_Win(p, rng);
+        if (mc_lin) lin_acc += mc_linear_theory(Wn, Win, p);
         MatrixXd X = run_states(Wn, Win, u);
         if (state_r2) {
             const int nrow = p.steps - p.washout;
@@ -205,12 +233,13 @@ inline VectorXd mc_curve(const MatrixXd& W, const ESNParams& p, std::mt19937& rn
         }
     }
     if (state_r2) *state_r2 = r2_acc / std::max(1, p.n_win);
+    if (mc_lin) *mc_lin = lin_acc / std::max(1, p.n_win);
     return acc / std::max(1, p.n_win);
 }
 
 inline double mc_total(const MatrixXd& W, const ESNParams& p, std::mt19937& rng,
-                       double* state_r2 = nullptr) {
-    return mc_curve(W, p, rng, state_r2).sum();
+                       double* state_r2 = nullptr, double* mc_lin = nullptr) {
+    return mc_curve(W, p, rng, state_r2, mc_lin).sum();
 }
 
 // ----------------------------------------------------------------------------
@@ -363,6 +392,18 @@ inline MatrixXd null_brokenstick(const MatrixXd& W, std::mt19937& rng) {
     }
     anneal_weight_swaps(F, n, s0, qt, rng);
     return scale_to_strengths(from_edges(F, n), s0);
+}
+
+// Control, not a null: the real weights made asymmetric. Each undirected edge keeps its
+// own weight in one direction and takes the weight of a random other edge in the other,
+// so only the symmetry changes (Tr W^2 = sum lambda^2 no longer equals sum_ij w_ij^2).
+inline MatrixXd asymmetric_control(const MatrixXd& W, std::mt19937& rng) {
+    UndirectedEdges E = undirected_edges(W);
+    std::vector<double> back = E.w;
+    std::shuffle(back.begin(), back.end(), rng);
+    MatrixXd M = MatrixXd::Zero(W.rows(), W.cols());
+    for (size_t e = 0; e < E.w.size(); ++e) { M(E.a[e], E.b[e]) = E.w[e]; M(E.b[e], E.a[e]) = back[e]; }
+    return M;
 }
 
 // ----------------------------------------------------------------------------
