@@ -19,6 +19,10 @@ python paper/exact_noise_free.py --data procdata/data_with_metrics.pkl --n 24
 On the Mac, if the ESN binaries complain about libomp, prefix the first command with
 `DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib` as for `chain_analysis.py`.
 
+`cross_species_v2.ipynb` is an exploration, not part of the manuscript: closed-form memory of the
+mesoscale connectomes packaged with bio2art (fly, two mouse, human, macaque, marmoset; downloaded to
+`~/.cache/bio2art`, not committed) against the human stable-rank line → `figures/explore_cross_species.png`.
+
 Main-text figures: `fig2_order2` (disparity → spectrum), `fig4_memory` (memory counts input
 directions above the noise floor), `fig5_lifespan`. Figures 1 and 3 of the manuscript are unchanged.
 SI figures: `figS_theory`, `figS_gramian`, `figS_noise`, `figS_energy`, `figS_global`,
