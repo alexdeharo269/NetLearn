@@ -44,6 +44,16 @@ DSI/*
 recoveryfigs/*
 ESNcpp/eigen-master/*
 *.R
+results/*
+ESN.ipynb
+Plt-test.ipynb
+Undirected_disparity.ipynb
+age_grouped_connectomes.ipynb
+dataset_exploration.ipynb
+dataset_preproc.ipynb
+disparity_modularity.ipynb
+node_grouping.ipynb
+pure_data.ipynb
 
 
 
