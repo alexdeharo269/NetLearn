@@ -55,6 +55,16 @@ disparity_modularity.ipynb
 node_grouping.ipynb
 pure_data.ipynb
 
+ESN/Classification.cpp
+ESN/Connectome_memory_comparison.cpp
+ESN/MC_age_production.cpp
+ESN/MC_age_groups.cpp
+ESN/Multitask.cpp
+ESN/Null_model.cpp
+ESN/Res_test.cpp
+ESN/Utils.cpp
+ESN/make.ps1
+
 
 
 
