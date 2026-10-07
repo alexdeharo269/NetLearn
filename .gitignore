@@ -1,82 +1,34 @@
-borradorv2
-supplementary
-*.pdf
-*zip
-*.json
-*.gexf
-/__pycache__/
-*.txt
-*.gz
-*.dat
-*.csv
-*.mat
-*.fz
-*.Ink
-preprocdata/aal*
-ESNcpp/eigen-master/*
-DSI/dsi_studio_win/*
-*.pkl
-*.o
-*.exe
-*.gephi
-*.lnk
-*.log
-*npy
-*.npz
-*.png
-*.pkl
-*.npz
-LICENSE
-README.md
-.venv/*
-*.py
-*.txt
-*.csv
-*.png
-*.pdf
-resuts/*
-agecorrelations/*
-conn2res/*
-ESN_Gephi/*
-graphs/*
-plots/*
-DSI/*
-recoveryfigs/*
-ESNcpp/eigen-master/*
-*.R
-results/*
-ESN.ipynb
-Plt-test.ipynb
-Undirected_disparity.ipynb
-age_grouped_connectomes.ipynb
-dataset_exploration.ipynb
-dataset_preproc.ipynb
-disparity_modularity.ipynb
-node_grouping.ipynb
-pure_data.ipynb
+# Only the paper code is tracked: notebooks, the C++ engine, the Python sources and the
+# bibliography. Everything else (data, caches, binaries, results, figures, older notebooks
+# and scripts) stays local.
+/*
+!/.gitignore
+!/CLAUDE.md
+!/engine/
+!/notebooks/
+!/src/
+!/note/
 
-ESN/Classification.cpp
-ESN/Connectome_memory_comparison.cpp
-ESN/MC_age_production.cpp
-ESN/MC_age_groups.cpp
-ESN/Multitask.cpp
-ESN/Null_model.cpp
-ESN/Res_test.cpp
-ESN/Utils.cpp
-ESN/make.ps1
+# engine: sources and build files only (no binaries, Eigen, caches or outputs)
+/engine/*
+!/engine/esn.hpp
+!/engine/esn_*.cpp
+!/engine/Makefile
+!/engine/build.ps1
+!/engine/README.md
 
+# notebooks: the notebooks only
+/notebooks/*
+!/notebooks/*.ipynb
 
+# src: Python modules only
+/src/*
+!/src/*.py
 
+# note: bibliography only
+/note/*
+!/note/*.bib
 
-
-# --- analytical chain: code is tracked; results, work files and binaries stay local ---
-!chain/
-!chain/*.py
-!chain/README.md
-chain/results*/
-chain/__pycache__/
-ESNcpp/esn_mc
-ESNcpp/esn_surrogates
-ESNcpp/esn_bio
-ESNcpp/esn_ipc
-ESNcpp/esn_trace
+.ipynb_checkpoints/
+__pycache__/
+.DS_Store
