@@ -15,6 +15,8 @@ the figures and the text need to paper/data/:
   nodes_v2.csv         node-level sample (150 subjects): degree, disparity, walk-expansion terms
   surrogates.csv       copy of chain_surrogates_scale1e-05.csv
   ridge_sweep.csv      (--ridge-sweep) simulated tanh ESN at several ridge penalties, 300 subjects
+  dynamics_noise.csv   closed-form MC with noise injected into the dynamics instead of at the
+                       readout (White et al. 2004; Ganguli et al. 2008), 600 subjects
   numbers.json         every number quoted in the manuscript and SI
 
 paper/make_figures.py draws the figures from paper/data only, so figures can be edited
@@ -52,6 +54,7 @@ RIDGE = 1e-6
 ETA0 = RIDGE / NTR                     # noise floor of the manuscript (input scale cancels)
 ETA_REL = [1e4, 1e3, 1e2, 1e1, 1.0, 1e-1, 1e-2, 1e-3, 1e-4]
 T_SERIES = [1, 2, 3, 5, 10, 20]
+EPS_DYN = [1e-9, 1e-7, 1e-5, 1e-3]    # variance of the noise injected per node and step (sigma_in = 1 units)
 AGE_SPLIT = 32.0
 MC = "MC_s1e-05"
 DS_NAMES = {1: "dHCP", 2: "BCP", 3: "CALM", 4: "RED", 5: "ACE", 6: "HCPd", 7: "HCPya", 8: "camCAN", 9: "HCPa"}
@@ -136,6 +139,28 @@ def node_sample(A):
                              T3=np.einsum("ij,ji->i", W2, Wn) / 6.0, s_tilde=Wn.sum(1)))
 
 
+def dynamics_noise(A, seed, eps_list=EPS_DYN):
+    """MC (tau = 1..TAU) when white noise of variance eps is injected into every node at every step,
+    x(t) = W~ x(t-1) + w u(t) + z(t), with the optimal linear readout. The state covariance is then
+    C + eps C_n with C_n = sum_j W~^j W~^j' = (I - W~^2)^-1 for symmetric W~, and the squared correlation
+    at delay tau is g' (C + eps C_n)^-1 g / s2u (White et al. 2004, Eq. 3)."""
+    N = A.shape[0]
+    lam_raw, V = np.linalg.eigh(A)
+    rho = np.abs(lam_raw).max()
+    Wn, lam = A * (RHO / rho), lam_raw * (RHO / rho)
+    w = np.random.default_rng(int(seed)).uniform(-1.0, 1.0, N)    # same input vector as subject_quantities
+    C = input_gramian(Wn, w)
+    Cn = (V / (1 - lam ** 2)) @ V.T
+    G = np.empty((TAU, N)); g = S2U * w
+    for t in range(TAU):
+        g = Wn @ g; G[t] = g
+    out = {}
+    for e in eps_list:
+        X = np.linalg.solve(C + e * Cn, G.T)
+        out[e] = float((G * X.T).sum() / S2U)
+    return out
+
+
 # ----------------------------------------------------------------------- statistics
 def r_(x, y):
     m = np.isfinite(x) & np.isfinite(y)
@@ -176,7 +201,7 @@ def quad_vertex(age, y, n_boot=2000, seed=0):
                 p_quadratic=float(p), coef=[float(x) for x in p2])
 
 
-def numbers(df, sweep, nodes, surr, ridge):
+def numbers(df, sweep, nodes, surr, ridge, dyn=None):
     N = {}
     d = df.dropna(subset=[MC]).copy()
     d["log_rs"] = np.log(d["stable_rank"])
@@ -280,6 +305,14 @@ def numbers(df, sweep, nodes, surr, ridge):
         N["ridge_sweep"] = {f"{e:g}": dict(n=int(len(g)), MC_mean=float(g["MC"].mean()), r_rs=r_(g["MC"].values, g["stable_rank"].values),
                                            r_sim_theory=r_(g["MC"].values, g["MC_lin"].values))
                             for e, g in rr.groupby("ridge")}
+    if dyn is not None:
+        dd = dyn.merge(d[["sid", "stable_rank", "MC_theory_py"]], on="sid")
+        N["dynamics_noise"] = {f"{e:g}": dict(n=int(len(g)), MC_mean=float(g["MC"].mean()),
+                                              r_log_rs=r_(g["MC"].values, np.log(g["stable_rank"].values)),
+                                              r_readout=r_(g["MC"].values, g["MC_theory_py"].values))
+                               for e, g in dd.groupby("eps")}
+        N["dynamics_noise"]["readout_same_subjects"] = dict(
+            r_log_rs=r_(dd.drop_duplicates("sid")["MC_theory_py"].values, np.log(dd.drop_duplicates("sid")["stable_rank"].values)))
     # node level
     nd = nodes.dropna()
     N["nodes"] = dict(n=int(len(nd)), R2_order2=float(np.corrcoef(nd["Cii"], 1 + nd["T2"])[0, 1] ** 2),
@@ -380,8 +413,13 @@ def main():
     elif (out / "ridge_sweep.csv").exists():
         ridge = pd.read_csv(out / "ridge_sweep.csv")
 
+    print("dynamics noise (600 subjects) ...", flush=True)
+    pick_d = np.random.default_rng(5).choice(len(sid), min(600, len(sid)), replace=False)
+    dyn = pd.DataFrame([dict(sid=int(sid[i]), eps=e, MC=v) for i in pick_d
+                        for e, v in dynamics_noise(mats[i], sid[i]).items()])
+
     print("numbers ...", flush=True)
-    N = numbers(df, sweep, nodes, surr, ridge)
+    N = numbers(df, sweep, nodes, surr, ridge, dyn)
     N["constants"] = dict(rho=RHO, s2u=S2U, n_train=NTR, ridge=RIDGE, eta0=ETA0, tau_max=TAU, age_split=AGE_SPLIT)
 
     df.to_csv(out / "subject_v2.csv", index=False)
@@ -389,6 +427,7 @@ def main():
     pd.DataFrame(ex_rows).to_csv(out / "examples.csv", index=False)
     pd.DataFrame(cur_rows).to_csv(out / "examples_curves.csv", index=False)
     nodes.to_csv(out / "nodes_v2.csv", index=False)
+    dyn.to_csv(out / "dynamics_noise.csv", index=False)
     shutil.copy(surr_src, out / "surrogates.csv")
     (out / "numbers.json").write_text(json.dumps(N, indent=2))
     print(f"outputs in {out}")
