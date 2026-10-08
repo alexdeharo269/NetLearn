@@ -31,11 +31,13 @@ SI figures: `figS_theory`, `figS_gramian`, `figS_noise`, `figS_energy`, `figS_gl
 The `data/` and `figures/` outputs are committed (with `git add -f`, since `.gitignore` excludes
 csv/json/pdf) so that the figures can be edited without the connectomes. `data/work/` is not committed.
 
-## v3
+## v3 (notebooks)
 
-- `analysis_v3.py`: parcellation of each cohort (HCPd, HCPya, camCAN and HCPa networks follow the AAL3 order),
-  factorisation of the stable rank, strongest edge and homotopic share, new null models (equal strength,
-  interhemispheric x1/2), virtual rescaling of interhemispheric weights, 82-region and strongest-edge controls,
-  CALM referred vs comparison children. Needs `all_data.mat` and `demographics.csv` of the original release:
-  `python paper/analysis_v3.py --data <export> --allmat <all_data.mat> --demo <demographics.csv>` -> `paper/data/v3/`.
-- `figures_v3.py`: single-column figures (seaborn, 400 dpi) -> `paper/figures/v3/`.
+- `analysis_v3.ipynb`: structure of each connectome with the labels of its parcellation (HCPd, HCPya, camCAN and HCPa
+  networks follow the AAL3 order), exact factorisation of the stable rank, strongest edge and homotopic share, null
+  models in closed form (including equal strength and interhemispheric x1/2), within-cohort aging and virtual rescaling
+  of interhemispheric weights, CALM referred vs comparison children, thresholding vs binarisation, and nodal disparity
+  against degree. Set the data paths in its second cell (`all_data.mat` and `demographics.csv` of the original release
+  are needed for CALM). Writes `paper/data/v3/`.
+- `figures_v3.ipynb`: Figs. 2 and 3 of the manuscript (single column, seaborn, 400 dpi) from `paper/data/` only
+  -> `paper/figures/v3/`. Fig. 1 is v1's memory paradigm (`trace_fit.pdf`).
