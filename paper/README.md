@@ -30,3 +30,12 @@ SI figures: `figS_theory`, `figS_gramian`, `figS_noise`, `figS_energy`, `figS_gl
 
 The `data/` and `figures/` outputs are committed (with `git add -f`, since `.gitignore` excludes
 csv/json/pdf) so that the figures can be edited without the connectomes. `data/work/` is not committed.
+
+## v3
+
+- `analysis_v3.py`: parcellation of each cohort (HCPd, HCPya, camCAN and HCPa networks follow the AAL3 order),
+  factorisation of the stable rank, strongest edge and homotopic share, new null models (equal strength,
+  interhemispheric x1/2), virtual rescaling of interhemispheric weights, 82-region and strongest-edge controls,
+  CALM referred vs comparison children. Needs `all_data.mat` and `demographics.csv` of the original release:
+  `python paper/analysis_v3.py --data <export> --allmat <all_data.mat> --demo <demographics.csv>` -> `paper/data/v3/`.
+- `figures_v3.py`: single-column figures (seaborn, 400 dpi) -> `paper/figures/v3/`.
