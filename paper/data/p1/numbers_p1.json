@@ -873,5 +873,55 @@
    "camCAN": 0.3958984767893453,
    "p": 2.5241091135203386e-40
   }
+ },
+ "stages": {
+  "newborns": {
+   "n": 447,
+   "cohorts": {
+    "dHCP": 447
+   },
+   "MC": 11.450051118568235,
+   "between_share": 0.1785276827600117,
+   "strongest": "Precentral_R-Putamen_R",
+   "strongest_share": 0.03219491172258956,
+   "strongest_is_top_in": 0.14541387024608501,
+   "strongest_share_by_cohort": {
+    "dHCP": 0.03219491172258957
+   }
+  },
+  "30-40 years": {
+   "n": 642,
+   "cohorts": {
+    "HCPa": 70,
+    "HCPya": 464,
+    "camCAN": 108
+   },
+   "MC": 9.649224318076081,
+   "between_share": 0.6457169763668938,
+   "strongest": "Supp_Motor_Area_L-Supp_Motor_Area_R",
+   "strongest_share": 0.27375377464141487,
+   "strongest_is_top_in": 0.897196261682243,
+   "strongest_share_by_cohort": {
+    "HCPa": 0.19659352650927098,
+    "HCPya": 0.37408581850074996,
+    "camCAN": 0.2505819789142234
+   }
+  },
+  "76 years or more": {
+   "n": 257,
+   "cohorts": {
+    "HCPa": 137,
+    "camCAN": 120
+   },
+   "MC": 10.723154350973235,
+   "between_share": 0.17701952796262654,
+   "strongest": "Supp_Motor_Area_L-Supp_Motor_Area_R",
+   "strongest_share": 0.04494624153833133,
+   "strongest_is_top_in": 0.14396887159533073,
+   "strongest_share_by_cohort": {
+    "HCPa": 0.049429090379688,
+    "camCAN": 0.04046339269697464
+   }
+  }
  }
 }
