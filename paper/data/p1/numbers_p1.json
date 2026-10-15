@@ -639,6 +639,42 @@
    },
    "MC_by_cohort": {
     "dHCP": 11.450051118568235
+   },
+   "rs": 7.231815515715941,
+   "rs_by_cohort": {
+    "dHCP": 7.231815515715941
+   },
+   "between_weight_share": 0.18597138250409886,
+   "between_weight_share_by_cohort": {
+    "dHCP": 0.18597138250409886
+   }
+  },
+  "6-12 years": {
+   "n": 218,
+   "cohorts": {
+    "HCPd": 218
+   },
+   "MC": 10.423347201834863,
+   "between_share": 0.6363233767068502,
+   "strongest": "Supp_Motor_Area_L-Supp_Motor_Area_R",
+   "strongest_share": 0.1608925228903803,
+   "strongest_is_top_in": 0.5963302752293578,
+   "strongest_share_by_cohort": {
+    "HCPd": 0.16089252289038034
+   },
+   "between_share_by_cohort": {
+    "HCPd": 0.6363233767068504
+   },
+   "MC_by_cohort": {
+    "HCPd": 10.423347201834863
+   },
+   "rs": 5.358296234375552,
+   "rs_by_cohort": {
+    "HCPd": 5.358296234375552
+   },
+   "between_weight_share": 0.3621265056995431,
+   "between_weight_share_by_cohort": {
+    "HCPd": 0.3621265056995431
    }
   },
   "30-40 years": {
@@ -667,6 +703,18 @@
     "HCPa": 10.192294714285717,
     "HCPya": 9.081309073275863,
     "camCAN": 9.674069166666667
+   },
+   "rs": 4.610860108732535,
+   "rs_by_cohort": {
+    "HCPa": 5.158342341645355,
+    "HCPya": 3.9969920359505555,
+    "camCAN": 4.677245948601693
+   },
+   "between_weight_share": 0.34194086163697085,
+   "between_weight_share_by_cohort": {
+    "HCPa": 0.34834478637586985,
+    "HCPya": 0.3506169617530689,
+    "camCAN": 0.3268608367819739
    }
   },
   "76 years or more": {
@@ -691,6 +739,16 @@
    "MC_by_cohort": {
     "HCPa": 10.62910386861314,
     "camCAN": 10.817204833333331
+   },
+   "rs": 5.90928669861157,
+   "rs_by_cohort": {
+    "HCPa": 5.774376657453886,
+    "camCAN": 6.044196739769254
+   },
+   "between_weight_share": 0.15914616999062364,
+   "between_weight_share_by_cohort": {
+    "HCPa": 0.16695886629041987,
+    "camCAN": 0.15133347369082742
    }
   }
  },
