@@ -1,0 +1,149 @@
+{
+ "n": {
+  "dHCP": 447,
+  "BCP": 179,
+  "CALM": 77,
+  "RED": 75,
+  "ACE": 85,
+  "HCPd": 633,
+  "HCPya": 1065,
+  "camCAN": 634,
+  "HCPa": 706
+ },
+ "cohort": {
+  "dHCP": {
+   "rP_90": 0.8499147055740661,
+   "rP_3": 0.32460552552818617,
+   "rW_90": 0.6195063413037757,
+   "rW_3": 0.19626998169638407,
+   "n": 447,
+   "n_better_AAL3": 0
+  },
+  "BCP": {
+   "rP_90": 0.8594181168602048,
+   "rP_3": 0.3278294863355242,
+   "rW_90": 0.7078276660730312,
+   "rW_3": 0.23115627035415245,
+   "n": 179,
+   "n_better_AAL3": 0
+  },
+  "HCPd": {
+   "rP_90": 0.3693540966223142,
+   "rP_3": 0.8833126149608889,
+   "rW_90": 0.349362317060995,
+   "rW_3": 0.8838576938291656,
+   "n": 633,
+   "n_better_AAL3": 633
+  },
+  "HCPya": {
+   "rP_90": 0.3564102913912908,
+   "rP_3": 0.8954817087671461,
+   "rW_90": 0.30470276357237047,
+   "rW_3": 0.8633689250369063,
+   "n": 1065,
+   "n_better_AAL3": 1065
+  },
+  "camCAN": {
+   "rP_90": 0.36794400134202493,
+   "rP_3": 0.8802987239821896,
+   "rW_90": 0.3277735178271855,
+   "rW_3": 0.8602407672470004,
+   "n": 634,
+   "n_better_AAL3": 634
+  },
+  "HCPa": {
+   "rP_90": 0.371887709665838,
+   "rP_3": 0.8656642424668634,
+   "rW_90": 0.34791056149560434,
+   "rW_3": 0.845058326678415,
+   "n": 706,
+   "n_better_AAL3": 706
+  }
+ },
+ "matching": {
+  "HCPd": {
+   "agree_AAL3": 72,
+   "of": 82,
+   "agree_AAL90": 18
+  },
+  "HCPya": {
+   "agree_AAL3": 74,
+   "of": 82,
+   "agree_AAL90": 17
+  },
+  "camCAN": {
+   "agree_AAL3": 66,
+   "of": 82,
+   "agree_AAL90": 16
+  },
+  "HCPa": {
+   "agree_AAL3": 69,
+   "of": 82,
+   "agree_AAL90": 17
+  }
+ },
+ "connections": [
+  {
+   "conn": "Supp_Motor_Area_L--Supp_Motor_Area_R",
+   "ref": 31.093306356806252,
+   "yeh_at_90": 18.855182761993948,
+   "label_at_90_under_AAL3": "Frontal_Sup_Medial_L--Frontal_Sup_Medial_R",
+   "yeh_at_3": 40.78939284529074
+  },
+  {
+   "conn": "Precuneus_L--Precuneus_R",
+   "ref": 21.570584669859482,
+   "yeh_at_90": 1.531237481974081e-05,
+   "label_at_90_under_AAL3": "Angular_L--Angular_R",
+   "yeh_at_3": 14.250091124918159
+  },
+  {
+   "conn": "Precentral_L--Postcentral_L",
+   "ref": 6.232199100684102,
+   "yeh_at_90": 0.11900220210226645,
+   "label_at_90_under_AAL3": "Precentral_L--Fusiform_L",
+   "yeh_at_3": 5.361846515151827
+  },
+  {
+   "conn": "Calcarine_L--Lingual_L",
+   "ref": 1.2229719854864762,
+   "yeh_at_90": 0.17149509376257507,
+   "label_at_90_under_AAL3": "Amygdala_L--Cuneus_L",
+   "yeh_at_3": 1.7677608178733264
+  },
+  {
+   "conn": "Frontal_Inf_Orb_L--Frontal_Inf_Orb_R",
+   "ref": 0.01729389878556766,
+   "yeh_at_90": 40.78939284529074,
+   "label_at_90_under_AAL3": "Supp_Motor_Area_L--Supp_Motor_Area_R",
+   "yeh_at_3": 0.012847796550962465
+  }
+ ],
+ "top_edges": [
+  {
+   "share": 40.78939284529077,
+   "as_AAL90": "Frontal_Inf_Orb_L--Frontal_Inf_Orb_R",
+   "as_AAL3": "Supp_Motor_Area_L--Supp_Motor_Area_R"
+  },
+  {
+   "share": 18.855182761993987,
+   "as_AAL90": "Supp_Motor_Area_L--Supp_Motor_Area_R",
+   "as_AAL3": "Frontal_Sup_Medial_L--Frontal_Sup_Medial_R"
+  },
+  {
+   "share": 14.879056611850814,
+   "as_AAL90": "Frontal_Sup_R--Supp_Motor_Area_L",
+   "as_AAL3": "Frontal_Sup_2_R--Frontal_Sup_Medial_L"
+  },
+  {
+   "share": 14.25009112491809,
+   "as_AAL90": "Paracentral_Lobule_L--Paracentral_Lobule_R",
+   "as_AAL3": "Precuneus_L--Precuneus_R"
+  },
+  {
+   "share": 12.629764804011131,
+   "as_AAL90": "Frontal_Inf_Orb_R--Caudate_L",
+   "as_AAL3": "Supp_Motor_Area_R--Paracentral_Lobule_L"
+  }
+ ]
+}
