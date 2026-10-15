@@ -11,5 +11,5 @@ input_scale=1e-05
 log_state=0
 log_theory=0
 threads=4
-in_csv=/home/user/NetLearn/paper/data/p1/sim/kappa_camCAN_0.25.csv
-out_csv=/home/user/NetLearn/paper/data/p1/sim/mc_kappa_camCAN_0.25.csv
+in_csv=/home/user/NetLearn/paper/data/p1/sim/inter_equalised.csv
+out_csv=/home/user/NetLearn/paper/data/p1/sim/mc_inter_equalised.csv
