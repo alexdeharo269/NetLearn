@@ -1,13 +1,17 @@
-# Only the paper code is tracked: notebooks, the C++ engine, the Python sources and the
-# bibliography. Everything else (data, caches, binaries, results, figures, older notebooks
-# and scripts) stays local.
+# Only the paper code is tracked: notebooks, the C++ engine, the Python sources, the
+# bibliography, and the README with its animated figure and the JavaScript that builds
+# it. Everything else (data, caches, binaries, results, figures, older notebooks and
+# scripts) stays local.
 /*
 !/.gitignore
 !/CLAUDE.md
+!/README.md
 !/engine/
 !/notebooks/
 !/src/
 !/note/
+!/animation/
+!/assets/
 
 # engine: sources and build files only (no binaries, Eigen, caches or outputs)
 /engine/*
@@ -28,6 +32,18 @@
 # note: bibliography only
 /note/*
 !/note/*.bib
+
+# animation: JavaScript sources and the embedded font only
+/animation/*
+!/animation/*.js
+!/animation/fonts/
+/animation/fonts/*
+!/animation/fonts/*.woff2
+!/animation/fonts/OFL.txt
+
+# assets: the animated figure of the README only
+/assets/*
+!/assets/*.svg
 
 .ipynb_checkpoints/
 __pycache__/
