@@ -127,7 +127,8 @@ function build(WA, WB, opts = {}) {
   const S1 = 0, S2 = 8.5, S3 = 15.5, S4 = 28.5, S5 = 40, S6 = 54, S7 = 61.5, S8 = 69.5, S9 = 84.5, S10 = 93.5,
     S11 = 99.5, S12 = 108, S13 = 116, S14 = 127.5, END = 135;
   const L = END + 0.8;
-  const loop = new Loop(L, opts.speed || 1.25);
+  const speed = opts.speed || 1.4;                  // playback speed relative to the composing pace
+  const loop = new Loop(L, speed);
   const defs = [], out = [];
   const push = (s) => out.push(s);
   const show = (a, b, inner, f = 0.6) => el('g', { opacity: 0 }, inner + loop.fade([[a, b]], f));
@@ -522,7 +523,7 @@ function build(WA, WB, opts = {}) {
     + el('rect', { x: 0.5, y: 0.5, width: Wd - 1, height: Ht - 1, rx: 12, fill: C.bg, stroke: C.hair })
     + body + '</svg>\n';
   const name = (i) => REGIONS[i][0];
-  return { svg, seconds: L / (opts.speed || 1.25),
+  return { svg, seconds: L / speed,
     stats: {
       A: { rs: A.rs, MC: A.res.MC, r2: Array.from(A.res.r2) }, B: { rs: B.rs, MC: B.res.MC }, H: { rs: H.rs, MC: H.res.MC },
       disparity: [name(A.lo), name(A.hi)], loops: loops.loops.map((s) => s.map(name).join(' > ')),

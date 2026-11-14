@@ -11,7 +11,7 @@
 //  --contrast    a second connectome in the same format, shown next to the first
 //  --check       trace_mccurve.csv written by engine/esn_trace for the first connectome:
 //                prints the largest difference between the C++ and the JS forgetting curve
-//  --speed       playback speed relative to the pace the scenes were composed at (default 1.25)
+//  --speed       playback speed relative to the pace the scenes were composed at (default 1.4)
 //  --out         output folder (default: assets)
 //
 //  Both connectomes must follow the region order of animation/atlas.js.
@@ -25,7 +25,7 @@ const { build } = require('./fig_approach.js');
 const args = {};
 for (let i = 2; i < process.argv.length; i += 2) args[process.argv[i].replace(/^--/, '')] = process.argv[i + 1];
 if (!args.connectome || !args.contrast) {
-  console.error('usage: node animation/build.js --connectome <a.csv> --contrast <b.csv> [--check <trace_mccurve.csv>] [--speed 1.25] [--out assets]');
+  console.error('usage: node animation/build.js --connectome <a.csv> --contrast <b.csv> [--check <trace_mccurve.csv>] [--speed 1.4] [--out assets]');
   process.exit(1);
 }
 const read = (file) => esn.parseConnectomeLine(fs.readFileSync(file, 'utf8').trim().split(/\r?\n/)[1], 90);
