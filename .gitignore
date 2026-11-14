@@ -1,6 +1,6 @@
 # Only the paper code is tracked: notebooks, the C++ engine, the Python sources, the
-# bibliography, and the README with its animated figures and the JavaScript that builds
-# them. Everything else (data, caches, binaries, results, figures, older notebooks and
+# bibliography, and the README with its animated figure and the JavaScript that builds
+# it. Everything else (data, caches, binaries, results, figures, older notebooks and
 # scripts) stays local.
 /*
 !/.gitignore
@@ -33,11 +33,15 @@
 /note/*
 !/note/*.bib
 
-# animation: JavaScript sources only
+# animation: JavaScript sources and the embedded font only
 /animation/*
 !/animation/*.js
+!/animation/fonts/
+/animation/fonts/*
+!/animation/fonts/*.woff2
+!/animation/fonts/OFL.txt
 
-# assets: the animated figures of the README only
+# assets: the animated figure of the README only
 /assets/*
 !/assets/*.svg
 
