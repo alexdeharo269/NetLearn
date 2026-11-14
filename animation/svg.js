@@ -1,9 +1,10 @@
 // ============================================================================
 //  svg.js — small helpers to write animated SVG (SMIL) by hand. No dependencies.
 //
-//  Every animation shares one loop of length L seconds (dur = L, repeatCount =
-//  indefinite) and is described by keyframes on that loop, so the whole figure
-//  stays in sync and can be seeked to any time.
+//  Every animation shares one loop of length L (repeatCount = indefinite) and is
+//  described by keyframes on that loop, so the whole figure stays in sync and can be
+//  seeked to any time. Times are written at the pace the scenes were composed at;
+//  speed plays the whole loop faster or slower without touching them.
 // ============================================================================
 'use strict';
 
@@ -50,7 +51,7 @@ function text(x, y, str, o = {}) {
 const EASE = '0.45 0 0.2 1';
 
 class Loop {
-  constructor(L) { this.L = L; }
+  constructor(L, speed = 1) { this.L = L; this.dur = `${num(L / speed, 3)}s`; }
 
   _clean(pts) {
     // sort, clamp to [0, L], make times strictly increasing, pin both ends
@@ -76,7 +77,7 @@ class Loop {
   _track(tag, base, pts, ease) {
     const p = this._clean(pts);
     const a = {
-      ...base, dur: `${this.L}s`, repeatCount: 'indefinite',
+      ...base, dur: this.dur, repeatCount: 'indefinite',
       keyTimes: p.map(([t]) => num(t / this.L, 5)).join(';'),
       values: p.map(([, v]) => (typeof v === 'number' ? num(v, 3) : v)).join(';'),
     };
@@ -94,7 +95,7 @@ class Loop {
     const out = [p[0]];
     for (let i = 1; i < p.length; i++) if (p[i][0] > out[out.length - 1][0] && p[i][0] < this.L) out.push(p[i]);
     return el('animate', {
-      attributeName: attr, dur: `${this.L}s`, repeatCount: 'indefinite', calcMode: 'discrete',
+      attributeName: attr, dur: this.dur, repeatCount: 'indefinite', calcMode: 'discrete',
       keyTimes: out.map(([t]) => num(t / this.L, 5)).join(';'),
       values: out.map(([, v]) => (typeof v === 'number' ? num(v, 3) : v)).join(';'),
     });

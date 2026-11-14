@@ -8,9 +8,11 @@
   <sup>2</sup>UBICS &nbsp;·&nbsp; <sup>3</sup>ICREA
 </p>
 
-<p align="center">
-  <img src="assets/approach.svg" width="100%" alt="Animated explanation of the approach in eleven scenes. The connectome is a network of 90 brain regions linked by nerve fibres, and every link has a weight. Disparity measures how evenly a region spreads its strength over its connections; subgraph centrality counts the loops by which activity returns to a region; the stable rank asks whether the weight of the whole network is shared or held by a few connections. The connectome is then used as the fixed recurrent layer of a neural network: a random signal is fed into every region and a trained readout tries to recall the signal a number of steps back. Recall fades with the delay; this is the forgetting curve, and the area under it is the memory capacity. Two connectomes with different weights have different memory capacities.">
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/approach_dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/approach_light.svg">
+  <img src="assets/approach_light.svg" width="100%" alt="Animated explanation of the approach in fourteen scenes. The connectome is a network of 90 brain regions linked by nerve fibres, and every link has a weight. Disparity measures how evenly a region spreads its strength over its connections; subgraph centrality adds up the loops by which activity returns to a region; the stable rank counts the independent directions that carry the weight of the whole network. The connectome is then used as the fixed recurrent layer of a neural network: a random signal is fed into every region and a trained readout tries to recall the signal a number of steps back. Recall fades with the delay; this is the forgetting curve, and the area under it is the memory capacity. Two connectomes with different weights have different memory capacities. In the example the heaviest links join the two hemispheres, and halving those weights on the same wiring raises the memory capacity.">
+</picture>
 
 <p align="center"><sub>
 The approach of the paper, one idea at a time. Everything drawn is computed from two connectomes of the dataset.
@@ -27,7 +29,7 @@ of steps back. How well it does, summed over the delays, is the memory capacity 
 
 On the structural side we look at how the weights are arranged: the disparity of each region, the loops counted by
 subgraph centrality, and the stable rank of the whole network. The paper shows how these three are tied together, how they
-predict memory capacity, and how both change across the lifespan.
+predict memory capacity, and how both change across the lifespan, where memory follows the weight between the two hemispheres.
 
 ## Repository
 
@@ -51,20 +53,21 @@ predict memory capacity, and how both change across the lifespan.
 
 ## The animation
 
-GitHub does not run scripts in a README, so the animation is an SVG file animated with SMIL. It is written by the
-JavaScript in [`animation/`](animation/), which has no dependencies:
+GitHub does not run scripts in a README, so the animation is an SVG file animated with SMIL, in a light and a dark version.
+It is written by the JavaScript in [`animation/`](animation/), which has no dependencies:
 
 | file | role |
 |---|---|
 | `esn.js` | port of `engine/esn.hpp`: the same random stream, reservoir update and ridge readout |
 | `atlas.js` | centroids of the 90 regions and the outline of the brain seen from above |
-| `fig_approach.js` | the eleven scenes and their timeline |
+| `fig_approach.js` | the fourteen scenes and their timeline |
 | `svg.js`, `build.js` | SVG helpers and the command line |
 
-Nothing in it is drawn by hand. The regions sit at the centroids of their atlas parcels and line width is connection weight
-(in the stable-rank scene, the share of the squared weight carried by the fifteen strongest connections).
-The signals, the readouts and the forgetting curves are simulated with the settings of the paper; on the first connectome the
-JavaScript port and the C++ engine give the same forgetting curve to six decimal places.
+Nothing in it is drawn by hand. The regions sit at the centroids of their atlas parcels and line width is connection weight.
+The bars of the stable-rank scene are the squared eigenvalues of the connectome relative to the largest; their sum is the stable rank.
+The signals, the readouts and the forgetting curves are simulated with the settings of the paper, also for the connectome
+with the weights between the hemispheres halved; on the first connectome the JavaScript port and the C++ engine give the
+same forgetting curve to six decimal places.
 
 To rebuild it, export two connectomes with `export_connectomes` of notebook 02 (it already writes the subject of the paradigm
 figure to `engine/data/connectome_one.csv`) and run:
