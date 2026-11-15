@@ -1,0 +1,15 @@
+reservoir_size=90
+spectral_radius=0.99
+ridge=1e-06
+train_ratio=0.7
+washout=1000
+seed=42
+steps=10000
+tau=20
+n_real=10
+input_scale=1.0
+log_theory=1
+asym_control=0
+threads=4
+in_csv=/home/user/NetLearn/paper/data/p1/sim/real100.csv
+out_csv=/home/user/NetLearn/paper/data/p1/sim/surr10_scale1.csv
