@@ -83,22 +83,6 @@ Memory here means how long a network retains its input. It is not a measure of w
    on first use; [`engine/README.md`](engine/README.md) has the details.
 4. **Run the notebooks in order:** `01`, then `02`, then `03`. Every expensive step is cached.
 
-## The animation
-
-GitHub does not run scripts in a README, so the animation is an SVG file animated with SMIL, in a light and a dark
-version. It is written by the JavaScript in [`animation/`](animation/), which has no dependencies and includes a port of
-the C++ engine.
-
-Nothing in it is drawn by hand. The regions sit at the centroids of their atlas parcels, line width is connection
-weight, and every signal, readout and forgetting curve is simulated on the two connectomes shown.
-
-To rebuild it, export two connectomes with `export_connectomes` of notebook 02 and run:
-
-```bash
-node animation/build.js --connectome engine/data/connectome_one.csv --contrast engine/data/connectome_two.csv
-```
-
-Both must come from HCPd, HCPya, camCAN or HCPa, whose region order is the one of `animation/atlas.js`.
 
 ## Data
 
