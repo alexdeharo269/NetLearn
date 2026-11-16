@@ -4,7 +4,7 @@
 //  REGIONS: name and centre of mass (MNI mm; x to the right, y to the front) of the
 //  first 90 regions of the AAL2 atlas (Rolls et al. 2015), computed from AAL2.nii.
 //  This is the region order of the HCPd, HCPya, camCAN and HCPa connectomes of the
-//  release (the later-atlas order described in the manuscript); regions 2m and 2m+1
+//  release (the later-atlas order); regions 2m and 2m+1
 //  are the left and right homologues.
 //  OUTLINE: silhouette of the MNI152 brain seen from above (axial projection of the
 //  skull-stripped 1 mm template), as a closed polygon in the same coordinates.

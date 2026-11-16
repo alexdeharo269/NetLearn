@@ -1,5 +1,5 @@
 // ============================================================================
-//  fig_approach.js — the approach of the paper as a silent, looping explainer.
+//  fig_approach.js — the approach of the project as a silent, looping explainer.
 //
 //  One idea per scene, in this order:
 //    1  the connectome as a network          8  can its state recall the past signal?
@@ -12,7 +12,7 @@
 //
 //  Everything drawn is data: the regions sit at their atlas centroids, the links are
 //  the weights of two connectomes, and the signals, the readouts and the forgetting
-//  curves are simulated with esn.js under the settings of the paper.
+//  curves are simulated with esn.js under the settings of the engine.
 //
 //  build(WA, WB, { theme, speed }) returns the SVG as a string. WA is the connectome
 //  followed through the whole figure, WB a second one for scenes 5 and 11.

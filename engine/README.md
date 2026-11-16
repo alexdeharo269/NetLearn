@@ -2,9 +2,9 @@
 
 Two deliverables:
 
-* **`notebooks/02_esn_memory.ipynb`** — one autonomous notebook that produces **Figure 1**
-  (MC across the lifespan + structural predictors) and **Figure 2** (communicability
-  decomposition, regime change, PCA), plus supplementary control/PCA/UMAP panels.
+* **`notebooks/02_esn_memory.ipynb`** — one autonomous notebook that measures the memory capacity of
+  every connectome and relates it to its structure (lifespan trajectories, structural
+  predictors, PCA/UMAP panels).
 * **`engine/`** (this folder) — five small C++/Eigen programs that compute memory capacity (and the
   surrogate / biological-input / IPC / single-trace variants), parallelised with OpenMP.
 
