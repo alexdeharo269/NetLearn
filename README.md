@@ -19,7 +19,7 @@
 </picture>
 
 <p align="center"><sub>
-The whole idea in a minute and a half. Everything drawn is computed from two real connectomes.
+The whole idea in a minute and a half.
 </sub></p>
 
 ## What is this
@@ -63,10 +63,9 @@ Memory here means how long a network retains its input. It is not a measure of w
 |---|---|
 | [`notebooks/01_data_and_structure.ipynb`](notebooks/01_data_and_structure.ipynb) | builds the dataset and measures the structure of every connectome |
 | [`notebooks/02_esn_memory.ipynb`](notebooks/02_esn_memory.ipynb) | runs every connectome as an echo-state network and measures its memory; null models |
-| [`notebooks/03_paper_v2.ipynb`](notebooks/03_paper_v2.ipynb) | relates structure to memory: statistics and figures |
+| [`notebooks/03_structure_and_memory.ipynb`](notebooks/03_structure_and_memory.ipynb) | relates structure to memory: statistics and figures |
 | [`engine/`](engine/) | the echo-state engine in C++ (Eigen, OpenMP); see [`engine/README.md`](engine/README.md) |
 | [`src/`](src/) | Python analysis code |
-| [`animation/`](animation/) | the animation above, in plain JavaScript |
 | [`note/`](note/) | bibliography |
 
 ## Getting started
@@ -82,7 +81,6 @@ Memory here means how long a network retains its input. It is not a measure of w
 3. **Set up the engine.** It needs a C++17 compiler and [Eigen](https://eigen.tuxfamily.org/). Notebook 02 builds it
    on first use; [`engine/README.md`](engine/README.md) has the details.
 4. **Run the notebooks in order:** `01`, then `02`, then `03`. Every expensive step is cached.
-
 
 ## Data
 

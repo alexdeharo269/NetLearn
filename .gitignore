@@ -1,4 +1,4 @@
-# Only the paper code is tracked: notebooks, the C++ engine, the Python sources, the
+# Only the project code is tracked: notebooks, the C++ engine, the Python sources, the
 # bibliography, and the README with its animated figure and the JavaScript that builds
 # it. Everything else (data, caches, binaries, results, figures, older notebooks and
 # scripts) stays local.

@@ -17,9 +17,9 @@ For every connectome W (diagonal zeroed, rescaled to spectral radius rho, W~ = r
   nulls   esn_surrogates (symmetric Uniform / Broken Stick / Reshuffle / Sign Flip, plus the
           real weights made asymmetric as a control) with sum lambda^2 and theory per matrix
 
-The ESN runs use engine/esn_mc and engine/esn_surrogates with the manuscript
+The ESN runs use engine/esn_mc and engine/esn_surrogates with the reference
 hyper-parameters (RES + MAIN/SURR of notebooks/02_esn_memory.ipynb); at input_scale=1
-esn_mc reproduces the manuscript MC, and the surrogate subset is the notebook's one when
+esn_mc reproduces the reference MC, and the surrogate subset is the notebook's one when
 <data>/cache/mc_surrogates.* exists.
 
 Usage (from the repo root):
@@ -36,7 +36,7 @@ from scipy import stats
 
 REPO = Path(__file__).resolve().parents[1]
 ESN_DIR = REPO / "engine"
-# Manuscript ESN hyper-parameters = RES + MAIN in notebooks/02_esn_memory.ipynb
+# Reference ESN hyper-parameters = RES + MAIN in notebooks/02_esn_memory.ipynb
 ESN_CFG = dict(reservoir_size=90, spectral_radius=0.99, ridge=1e-6, train_ratio=0.7,
                washout=1000, steps=10000, tau=20, win_reps=1, seed=42)
 SURR_CFG = dict(steps=10000, tau=20)          # SURR in the notebook (n_real from --surr-real)
@@ -273,7 +273,7 @@ def lifespan(df, col):
 
 
 def shape_col(df):
-    return "Ratio" if "Ratio" in df else "ratio_mean"      # Ratio = the manuscript's R = Y / Y_null
+    return "Ratio" if "Ratio" in df else "ratio_mean"      # Ratio = R = Y / Y_null
 
 
 PREDICTORS = ["m2", "abs_lam_mean", "imc", "Cii_mean", "GI_mean", "m3", "m4", "Ratio", "ratio_mean",
@@ -315,7 +315,7 @@ def surrogate_block(surr, df, sc):
                 n_subjects=int(sm["subject_id"].nunique()), n_real=int(surr["realization"].nunique()))
 
 
-def manuscript_nulls(cache):
+def directed_nulls(cache):
     old = read_cache_table(cache, "mc_surrogates")
     if old is None or "model" not in old: return None
     w = old.groupby(["subject_id", "model"])["MC"].mean().unstack()
@@ -355,8 +355,8 @@ def summarize(df, scales, pooled, cache_check, surr, cache):
         out[f"scale_{sc:g}"] = blk
     if len(scales) >= 2:
         out["MC_between_scales"] = pr(df[f"MC_s{scales[0]:g}"], df[f"MC_s{scales[1]:g}"])
-    mn = manuscript_nulls(cache)
-    if mn: out["manuscript_directed_nulls_scale1"] = mn
+    mn = directed_nulls(cache)
+    if mn: out["directed_nulls_scale1"] = mn
     if cache_check: out["reproduction_vs_cached_MC"] = cache_check
     return out
 
@@ -383,7 +383,7 @@ def summary_markdown(S, scales):
     L += ["\n## Step 4 · structure → MC (subject level)",
           "| predictor | " + " | ".join(f"r (scale {s:g})" for s in scales) + " |", "|---|" + "---|" * len(scales)]
     names = dict(m2="⟨s̃²Y⟩ = Σλ²/N", abs_lam_mean="⟨|λ|⟩ (Aceituno)", imc="Σλ²(1−λ^2τ)", Cii_mean="⟨C_ii⟩",
-                 GI_mean="⟨(G_I)_ii⟩", m3="Σλ³/N (triangles)", m4="Σλ⁴/N", Ratio="R = Y/Y_null (manuscript)",
+                 GI_mean="⟨(G_I)_ii⟩", m3="Σλ³/N (triangles)", m4="Σλ⁴/N", Ratio="R = Y/Y_null",
                  ratio_mean="⟨Υ/μ_null⟩ (node mean)", Ups_mean="⟨Υ⟩", Y_mean="⟨Y⟩", s2_mean="⟨s̃²⟩",
                  C_w="C_w (weighted clustering)", strength_raw_mean="raw strength", density="density")
     first = S[f"scale_{scales[0]:g}"]
@@ -419,9 +419,9 @@ def summary_markdown(S, scales):
             p_txt = f"{b['wilcoxon_p']:.1e}" if "wilcoxon_p" in b else "—"
             L.append(f"| {m} | {f3(b.get('dMC_median'))} | {p_txt} | {b['MC_mean']:.2f} | "
                      f"{b['MC_lin_mean']:.2f} | {b['m2_mean']:.4f} | {b['MC_pred_from_m2']:.2f} |")
-    if "manuscript_directed_nulls_scale1" in S:
-        L.append("\nManuscript (directed Reshuffle / Broken Stick, input scale 1, cached): " + "; ".join(
-            f"{m} {b['dMC_median']:+.3f} (p={b['wilcoxon_p']:.1e})" for m, b in S["manuscript_directed_nulls_scale1"].items()))
+    if "directed_nulls_scale1" in S:
+        L.append("\nOriginal runs (directed Reshuffle / Broken Stick, input scale 1, cached): " + "; ".join(
+            f"{m} {b['dMC_median']:+.3f} (p={b['wilcoxon_p']:.1e})" for m, b in S["directed_nulls_scale1"].items()))
     L.append("\n## Input scale, linearity and lifespan")
     for s in scales:
         b = S[f"scale_{s:g}"]
@@ -436,7 +436,7 @@ def summary_markdown(S, scales):
         L.append(f"- MC(scale {scales[0]:g}) vs MC(scale {scales[1]:g}): Pearson {c['r']:.3f}, Spearman {c['rho']:.3f}")
     if "reproduction_vs_cached_MC" in S:
         c = S["reproduction_vs_cached_MC"]
-        L.append(f"- reproduction of the cached manuscript MC: Pearson {c['r']:.5f}, max |ΔMC| {c['max_abs_diff']:.2e} (n={c['n']})")
+        L.append(f"- reproduction of the cached reference MC: Pearson {c['r']:.5f}, max |ΔMC| {c['max_abs_diff']:.2e} (n={c['n']})")
     return "\n".join(L) + "\n"
 
 
@@ -447,7 +447,7 @@ INK, INK2, GRID, MUTED = "#0b0b0b", "#52514e", "#e4e3df", "#a3a29c"
 MODEL_COL = {"Real": INK, "Uniform": AQUA, "BrokenStick": RED, "Reshuffle": BLUE, "SignFlip": YELLOW, "RealAsym": MAGENTA}
 MODEL_LAB = {"Real": "Real", "Uniform": "Uniform", "BrokenStick": "Broken Stick", "Reshuffle": "Reshuffle",
              "SignFlip": "Sign Flip", "RealAsym": "Real, asymmetric"}
-REGIME_COL = {"development": ORANGE, "aging": VIOLET}       # as in the manuscript figure
+REGIME_COL = {"development": ORANGE, "aging": VIOLET}       # as in the lifespan figure
 LABEL_OFFSET = {"Real": (-7, 6, "right"), "Reshuffle": (7, -11, "left"), "SignFlip": (7, 5, "left")}
 
 

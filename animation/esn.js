@@ -104,7 +104,7 @@ function rescaleSpectral(W, n, rho) {
   return out;
 }
 
-// Stable rank r_s = ||W||_F^2 / rho(W)^2 (Eq. 5 of the paper); scale-invariant.
+// Stable rank r_s = ||W||_F^2 / rho(W)^2; scale-invariant.
 function stableRank(W, n) {
   let f2 = 0;
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j) f2 += W[i * n + j] * W[i * n + j];
