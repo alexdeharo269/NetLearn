@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     std::cerr << "esn_surrogates: " << S << " subjects x " << n_real << " realizations\n";
 
     // one result row per (subject, realization, model)
-    struct Row { int sid, rep; const char* model; double mc, m2, lin; };
+    struct Row { int sid, rep; const char* model; double mc, m2, lin, s2; };
     std::vector<std::vector<Row>> buf(S);
 
     #pragma omp parallel for schedule(dynamic)
@@ -48,10 +48,10 @@ int main(int argc, char** argv) {
         std::mt19937 rng(p.seed + 1000u * (unsigned)ids[i]);
         std::mt19937 rng_ctrl(p.seed + 1000u * (unsigned)ids[i] + 7u);
         auto run = [&](int rep, const char* name, const MatrixXd& M, std::mt19937& g) {
-            double lin = 0.0, m2 = 0.0;
+            double lin = 0.0, m2 = 0.0, s2 = 0.0;
             const double mc = mc_total(M, p, g, nullptr, log_theory ? &lin : nullptr);
-            if (log_theory) { const MatrixXd Wn = rescale_spectral(M, p.rho); m2 = (Wn * Wn).trace() / p.N; }
-            buf[i].push_back({ids[i], rep, name, mc, m2, lin});
+            if (log_theory) { const MatrixXd Wn = rescale_spectral(M, p.rho); m2 = (Wn * Wn).trace() / p.N; s2 = Wn.rowwise().sum().squaredNorm() / p.N; }   // s2: mean squared strength
+            buf[i].push_back({ids[i], rep, name, mc, m2, lin, s2});
         };
         for (int rep = 0; rep < n_real; ++rep) {
             // Real: re-seed per realization so Real and nulls see the same input draw stream.
@@ -68,10 +68,10 @@ int main(int argc, char** argv) {
     std::cerr << "\n";
 
     std::ofstream out(out_csv);
-    out << "subject_id,realization,model,MC" << (log_theory ? ",m2,MC_lin" : "") << "\n";
+    out << "subject_id,realization,model,MC" << (log_theory ? ",m2,MC_lin,s2" : "") << "\n";
     for (auto& rows : buf) for (auto& r : rows) {
         out << r.sid << "," << r.rep << "," << r.model << "," << r.mc;
-        if (log_theory) out << "," << r.m2 << "," << r.lin;
+        if (log_theory) out << "," << r.m2 << "," << r.lin << "," << r.s2;
         out << "\n";
     }
     std::cerr << "wrote " << out_csv << "\n";
